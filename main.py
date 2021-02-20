@@ -73,4 +73,5 @@ while not game_over:
     print()
 
     if TurnEvent.GAME_FINISHED in events:
+        print("Game over!")
         game_over = True

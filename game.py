@@ -1,5 +1,5 @@
 from random import shuffle
-from typing import List, Set, Dict, Any, Tuple
+from typing import List, Set, Dict, Any, Tuple, Optional
 from enum import Enum
 
 FACE_RANKS = ["3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A", "2"]
@@ -87,7 +87,8 @@ class Game:
         if move == Move.PASS:
             self.player_status[player_no] = PlayerStatus.PASSED
             events.append(TurnEvent.PLAYER_PASSED)
-            events = self.prepare_next_turn(events)
+            next_turn_events = self.prepare_next_turn()
+            events.extend(next_turn_events)
             return TurnResult.SUCCESS, events
 
         # Player has chosen to play a card
@@ -107,34 +108,51 @@ class Game:
             self.player_status[player_no] = PlayerStatus.FINISHED
             events.append(TurnEvent.PLAYER_FINISHED)
 
-        events = self.prepare_next_turn(events)
+        next_turn_events = self.prepare_next_turn()
+        events.extend(next_turn_events)
         return TurnResult.SUCCESS, events
 
-    def prepare_next_turn(self, events: List[TurnEvent]) -> List[TurnEvent]:
-        self.current_player_no = self.find_next_player_no()
-        if self.current_player_no == self.last_card_played_player_no:
-            # This means that it has passed all round and come back to the last person to
-            # play a card. They have won the round, and start the next round.
-            events.append(TurnEvent.ROUND_FINISHED)
+    def prepare_next_turn(self) -> List[TurnEvent]:
+        next_player_no, events = self.find_next_player_no()
+        if next_player_no == -1:
+            # Game has finished
+            return events
+        elif TurnEvent.ROUND_FINISHED in events:
             self.reset_round()
-            if all(len(hand) == 0 for hand in self.player_hands):
-                events.append(TurnEvent.GAME_FINISHED)
+        self.current_player_no = next_player_no
         return events
 
-    # TODO: Currently cannot deal with the scenario where someone finishes, and then
-    # everyone else passes. In that case, the person right after the finisher should
-    # start the next round.
-    def find_next_player_no(self) -> int:
+    def find_next_player_no(self) -> Tuple[int, List[TurnEvent]]:
         """
-        Assumes that `self.current_player_no` has just finished their turn. Goes through
-        the remaining players, finding the first one that is still in the round. If there
-        is none, it returns -1, indicating the that current player has won the round.
+        Assumes that `self.current_player_no` has just finished their turn.
         """
-        assert any(self.player_status[n] == PlayerStatus.ACTIVE for n in range(len(self.player_ids)))
+        # Iterate through players, starting with the person right after the current player
         for player_no in range_wrapped(len(self.player_ids), offset=self.current_player_no + 1):
-            if self.player_status[player_no] == PlayerStatus.ACTIVE:
-                return player_no
-        return -1
+            if player_no == self.last_card_played_player_no:
+                # Passes all round, back to the last card player
+                events = [TurnEvent.ROUND_FINISHED]
+                if self.player_status[player_no] == PlayerStatus.FINISHED:
+                    next_player_no = self.find_first_non_finished_player_no(start_no=player_no + 1)
+                    if next_player_no is None:
+                        events.append(TurnEvent.GAME_FINISHED)
+                        return -1, events
+                    else:
+                        return next_player_no, events
+                else:
+                    return player_no, events
+            elif self.player_status[player_no] == PlayerStatus.ACTIVE:
+                return player_no, []
+        assert False
+
+    def find_first_non_finished_player_no(self, start_no) -> Optional[int]:
+        try:
+            return next(
+                p_no
+                for p_no in range_wrapped(len(self.player_ids), offset=start_no)
+                if self.player_status[p_no] != PlayerStatus.FINISHED
+            )
+        except StopIteration:
+            return None
 
     def reset_round(self):
         self.card_stack = []

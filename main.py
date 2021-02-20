@@ -8,7 +8,9 @@ FACE_SUITS = ["DIAMONDS", "CLUBS", "HEARTS", "SPADES"]
 
 class Card:
     def __init__(self, value: int):
-        self.value = value % 52
+        if not 0 <= value < 52:
+            raise ValueError(f"Cannot build Card from value: {value}")
+        self.value = value
         self.rank = self.value % 13
         self.suit = self.value // 13
 
@@ -34,23 +36,23 @@ class Move(Enum):
     PASS = 1
 
 class TurnResult(Enum):
-    SUCCESS          = 0
-    WRONG_PLAYER     = 1
-    PLAYER_PASSED    = 2
-    PLAYER_FINISHED  = 3
-    CARD_NOT_IN_HAND = 4
-    INVALID_CARD     = 5
+    SUCCESS           = 0
+    WRONG_PLAYER      = 1
+    PLAYER_PASSED     = 2
+    PLAYER_FINISHED   = 3
+    CARD_NOT_IN_HAND  = 4
+    CARD_NOT_PLAYABLE = 5
 
 class TurnEvent(Enum):
-    PLAYER_PASSED      = 0
-    PLAYER_FINISHED    = 1
-    ROUND_FINISHED     = 2
-    GAME_FINISHED      = 3
+    PLAYER_PASSED   = 0
+    PLAYER_FINISHED = 1
+    ROUND_FINISHED  = 2
+    GAME_FINISHED   = 3
 
 class Game:
     def __init__(self, player_ids: List[str]):
         self.player_ids = player_ids
-        self.player_status = [PlayerStatus.ACTIVE for _ in range(len(player_ids))]
+        self.player_status = [PlayerStatus.ACTIVE] * len(player_ids)
         self.card_stack: List[Card] = []
         self.player_hands = deal_hands(len(player_ids))
         self.current_player_no = self.starting_player_no()
@@ -93,6 +95,9 @@ class Game:
         if card not in hand:
             return TurnResult.CARD_NOT_IN_HAND, events
 
+        if card not in playable_cards(self.card_stack, hand):
+            return TurnResult.CARD_NOT_PLAYABLE, events
+
         hand.remove(card)
         self.card_stack.append(card)
 
@@ -100,18 +105,43 @@ class Game:
             self.player_status[player_no] = PlayerStatus.FINISHED
             events.append(TurnEvent.PLAYER_FINISHED)
 
+        next_player_no = self.find_next_player_no()
+
+        if next_player_no == -1:
+            events.append(TurnEvent.ROUND_FINISHED)
+            self.reset_round()
+            if all(len(hand) == 0 for hand in self.player_hands):
+                events.append(TurnEvent.GAME_FINISHED)
+        else:
+            self.current_player_no = next_player_no
+
         return TurnResult.SUCCESS, events
 
-    # def next_player_no(self) -> int:
-    #     """
-    #     Assumes that `self.current_player_no` has just finished their turn.
-    #     """
-    #     for offset in range(1, len(self.player_ids)):
-    #         player_no = (self.current_player_no + offset) % len(self.player_ids)
-    #         if self.player_status[player_no] == PlayerStatus.ACTIVE:
-    #             return player_no
-    #     return -1
+    def find_next_player_no(self) -> int:
+        """
+        Assumes that `self.current_player_no` has just finished their turn. Goes through
+        the remaining players, finding the first one that is still in the round. If there
+        is none, it returns -1, indicating the that current player has won the round.
+        """
+        for player_no in range_wrapped(len(self.player_ids) - 1, offset=self.current_player_no):
+            if self.player_status[player_no] == PlayerStatus.ACTIVE:
+                return player_no
+        return -1
 
+    def reset_round(self):
+        self.card_stack = []
+        for player_no in range(len(self.player_ids)):
+            if self.player_status[player_no] == PlayerStatus.PASSED:
+                self.player_status[player_no] = PlayerStatus.ACTIVE
+
+
+def range_wrapped(n, offset):
+    """
+    >>> list(range_wrapped(5, offset=2))
+    [2, 3, 4, 0, 1]
+    """
+    for i in range(0, n):
+        yield (i + offset) % n
 
 def playable_cards(card_stack: List[Card], hand: Set[Card]) -> Set[Card]:
     if card_stack:

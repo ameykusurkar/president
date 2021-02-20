@@ -55,6 +55,7 @@ class Game:
         self.card_stack: List[Card] = []
         self.player_hands = deal_hands(len(player_ids))
         self.current_player_no = self.starting_player_no()
+        self.last_card_played_player_no = -1
 
     def starting_player_no(self) -> int:
         """
@@ -86,6 +87,7 @@ class Game:
         if move == Move.PASS:
             self.player_status[player_no] = PlayerStatus.PASSED
             events.append(TurnEvent.PLAYER_PASSED)
+            events = self.prepare_next_turn(events)
             return TurnResult.SUCCESS, events
 
         # Player has chosen to play a card
@@ -99,30 +101,37 @@ class Game:
 
         hand.remove(card)
         self.card_stack.append(card)
+        self.last_card_played_player_no = self.current_player_no
 
         if len(hand) == 0:
             self.player_status[player_no] = PlayerStatus.FINISHED
             events.append(TurnEvent.PLAYER_FINISHED)
 
-        next_player_no = self.find_next_player_no()
+        events = self.prepare_next_turn(events)
+        return TurnResult.SUCCESS, events
 
-        if next_player_no == -1:
+    def prepare_next_turn(self, events: List[TurnEvent]) -> List[TurnEvent]:
+        self.current_player_no = self.find_next_player_no()
+        if self.current_player_no == self.last_card_played_player_no:
+            # This means that it has passed all round and come back to the last person to
+            # play a card. They have won the round, and start the next round.
             events.append(TurnEvent.ROUND_FINISHED)
             self.reset_round()
             if all(len(hand) == 0 for hand in self.player_hands):
                 events.append(TurnEvent.GAME_FINISHED)
-        else:
-            self.current_player_no = next_player_no
+        return events
 
-        return TurnResult.SUCCESS, events
-
+    # TODO: Currently cannot deal with the scenario where someone finishes, and then
+    # everyone else passes. In that case, the person right after the finisher should
+    # start the next round.
     def find_next_player_no(self) -> int:
         """
         Assumes that `self.current_player_no` has just finished their turn. Goes through
         the remaining players, finding the first one that is still in the round. If there
         is none, it returns -1, indicating the that current player has won the round.
         """
-        for player_no in range_wrapped(len(self.player_ids) - 1, offset=self.current_player_no + 1):
+        assert any(self.player_status[n] == PlayerStatus.ACTIVE for n in range(len(self.player_ids)))
+        for player_no in range_wrapped(len(self.player_ids), offset=self.current_player_no + 1):
             if self.player_status[player_no] == PlayerStatus.ACTIVE:
                 return player_no
         return -1

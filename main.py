@@ -3,6 +3,21 @@ import os
 
 from game import Game, Move, Card, TurnResult, TurnEvent
 
+def get_choice(num_options) -> int:
+    choice = None
+    while choice is None:
+        cand = input("Pick an index to play: ")
+        try:
+            value = int(cand)
+            if not 0 <= value < num_options:
+                print(f"Invalid index: {value}. Try again.")
+                continue
+            choice = value
+        except ValueError:
+            print(f"Invalid value: {cand}, try again.")
+            continue
+    return choice
+
 player_ids = [
     "amey",
     "batman",
@@ -34,15 +49,13 @@ while not game_over:
     print("These are the cards you have:")
     
     print(f"\t0: PASS")
-    cards = list(details["hand"])
+    cards = sorted(list(details["hand"]), key=lambda c: c.rank)
     for i, card in enumerate(cards, start=1):
-        print(f"\t{i}: {str(card)}")
+        playable = "   <-- playable" if card in details["playable_cards"] else ""
+        print(f"\t{i}: {str(card).ljust(15)}{playable}")
 
     print()
-    try:
-        choice = int(input("Pick an index to play: "))
-    except ValueError:
-        continue
+    choice = get_choice(num_options=len(cards)+1)
 
     os.system("clear")
 

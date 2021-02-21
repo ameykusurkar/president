@@ -35,10 +35,10 @@ while not game_over:
     details = game.turn_details()
 
     max_length = max(len(s) for s in player_ids)
-    for i, player_id in enumerate(player_ids):
-        name = f"{player_id}:".ljust(max_length + 1)
-        arrow = "   <-- to play" if details["player_no"] == i else ""
-        status = str(game.player_status[i]).split(".")[1]
+    for player in game.players:
+        name = f"{player.id}:".ljust(max_length + 1)
+        arrow = "   <-- to play" if details["player_id"] == player.id else ""
+        status = str(player.status).split(".")[1]
         print(f"{name} {status}{arrow}")
 
     print()
@@ -49,7 +49,7 @@ while not game_over:
     print("These are the cards you have:")
     
     print(f"\t0: PASS")
-    cards = sorted(list(details["hand"]), key=lambda c: c.rank)
+    cards = details["hand"]
     for i, card in enumerate(cards, start=1):
         playable = "   <-- playable" if card in details["playable_cards"] else ""
         print(f"\t{i}: {str(card).ljust(15)}{playable}")
@@ -65,7 +65,7 @@ while not game_over:
         print(f"{current_player_id} passed.\n")
     else:
         card = cards[choice - 1]
-        result, events = game.play_turn(details["player_no"], Move.PLAY, card)
+        result, events = game.play_turn(details["player_no"], Move.PLAY, Card(card["value"]))
         print(f"{current_player_id} played {card}.\n")
 
     print(f"{result =}")

@@ -28,68 +28,73 @@ class TurnEvent(Enum):
     ROUND_FINISHED  = 2
     GAME_FINISHED   = 3
 
+class Player:
+    def __init__(self, player_id: str, hand: set[Card]):
+        self.id = player_id
+        self.hand = hand
+        self.status = PlayerStatus.ACTIVE
+
 class Game:
     def __init__(self, player_ids: list[str]):
-        self.player_ids = player_ids
-        self.player_status = [PlayerStatus.ACTIVE] * len(player_ids)
-        self.card_stack: list[Card] = []
-        self.player_hands = deal_hands(len(player_ids))
+        hands = deal_hands(len(player_ids))
+        self.players = list(Player(player_id, hand) for (player_id, hand) in zip(player_ids, hands))
         self.current_player_no = self.starting_player_no()
+        self.card_stack: list[Card] = []
         self.last_card_played_player_no = -1
 
     def starting_player_no(self) -> int:
         """
         Player with 3 OF DIAMONDS starts
         """
-        return next(p for p in range(len(self.player_ids)) if Card(0) in self.player_hands[p])
+        return next(i for i, p in enumerate(self.players) if Card(0) in p.hand)
 
     def turn_details(self) -> Dict[str, Any]:
-        hand = self.player_hands[self.current_player_no]
+        player = self.players[self.current_player_no]
         return {
             "player_no": self.current_player_no,
-            "player_id": self.player_ids[self.current_player_no],
-            "hand": serialize_iterable(sorted(hand, key=lambda c: c.rank)),
+            "player_id": player.id,
+            "hand": serialize_iterable(sorted(player.hand, key=lambda c: c.rank)),
             "top_card": self.card_stack[-1].serialize() if self.card_stack else None,
-            "playable_cards": serialize_iterable(sorted(playable_cards(self.card_stack, hand), key=lambda c: c.rank)),
+            "playable_cards": serialize_iterable(sorted(playable_cards(self.card_stack, player.hand), key=lambda c: c.rank)),
             "game_finished": self.is_game_finished(),
         }
 
     def is_game_finished(self) -> bool:
-        return all(sts == PlayerStatus.FINISHED for sts in self.player_status)
+        return all(p.status == PlayerStatus.FINISHED for p in self.players)
 
     def play_turn(self, player_no: int, move: Move, card: Card) -> Tuple[TurnResult, list[TurnEvent]]:
         events: list[TurnEvent] = []
         if player_no != self.current_player_no:
             return TurnResult.WRONG_PLAYER, events
 
-        if self.player_status == PlayerStatus.PASSED:
+        player = self.players[player_no]
+
+        if player.status == PlayerStatus.PASSED:
             return TurnResult.PLAYER_PASSED, events
 
-        if self.player_status == PlayerStatus.FINISHED:
+        if player.status == PlayerStatus.FINISHED:
             return TurnResult.PLAYER_FINISHED, events
 
         if move == Move.PASS:
-            self.player_status[player_no] = PlayerStatus.PASSED
+            player.status = PlayerStatus.PASSED
             events.append(TurnEvent.PLAYER_PASSED)
             next_turn_events = self.prepare_next_turn()
             events.extend(next_turn_events)
             return TurnResult.SUCCESS, events
 
         # Player has chosen to play a card
-        hand = self.player_hands[player_no]
-
-        if card not in hand:
+        if card not in player.hand:
             return TurnResult.CARD_NOT_IN_HAND, events
 
-        if card not in playable_cards(self.card_stack, hand):
+        if card not in playable_cards(self.card_stack, player.hand):
             return TurnResult.CARD_NOT_PLAYABLE, events
 
-        hand.remove(card)
+        player.hand.remove(card)
         self.card_stack.append(card)
         self.last_card_played_player_no = self.current_player_no
 
-        if len(hand) == 0:
-            self.player_status[player_no] = PlayerStatus.FINISHED
+        if len(player.hand) == 0:
+            player.status = PlayerStatus.FINISHED
             events.append(TurnEvent.PLAYER_FINISHED)
 
         next_turn_events = self.prepare_next_turn()
@@ -111,11 +116,12 @@ class Game:
         Assumes that `self.current_player_no` has just finished their turn.
         """
         # Iterate through players, starting with the person right after the current player
-        for player_no in range_wrapped(len(self.player_ids), offset=self.current_player_no + 1):
+        for player_no in range_wrapped(len(self.players), offset=self.current_player_no + 1):
+            player = self.players[player_no]
             if player_no == self.last_card_played_player_no:
                 # Passes all round, back to the last card player
                 events = [TurnEvent.ROUND_FINISHED]
-                if self.player_status[player_no] == PlayerStatus.FINISHED:
+                if player.status == PlayerStatus.FINISHED:
                     next_player_no = self.find_first_non_finished_player_no(start_no=player_no + 1)
                     if next_player_no is None:
                         events.append(TurnEvent.GAME_FINISHED)
@@ -124,7 +130,7 @@ class Game:
                         return next_player_no, events
                 else:
                     return player_no, events
-            elif self.player_status[player_no] == PlayerStatus.ACTIVE:
+            elif player.status == PlayerStatus.ACTIVE:
                 return player_no, []
         assert False
 
@@ -132,17 +138,17 @@ class Game:
         try:
             return next(
                 p_no
-                for p_no in range_wrapped(len(self.player_ids), offset=start_no)
-                if self.player_status[p_no] != PlayerStatus.FINISHED
+                for p_no in range_wrapped(len(self.players), offset=start_no)
+                if self.players[p_no].status != PlayerStatus.FINISHED
             )
         except StopIteration:
             return None
 
     def reset_round(self):
         self.card_stack = []
-        for player_no in range(len(self.player_ids)):
-            if self.player_status[player_no] == PlayerStatus.PASSED:
-                self.player_status[player_no] = PlayerStatus.ACTIVE
+        for player in self.players:
+            if player.status == PlayerStatus.PASSED:
+                player.status = PlayerStatus.ACTIVE
 
 
 def range_wrapped(n, offset):

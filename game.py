@@ -2,6 +2,8 @@ from random import shuffle
 from typing import Set, Dict, Any, Tuple, Optional, Union
 from enum import Enum
 
+from serialize import serialize_iterable
+
 FACE_RANKS = ["3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A", "2"]
 FACE_SUITS = ["DIAMONDS", "CLUBS", "HEARTS", "SPADES"]
 
@@ -71,9 +73,9 @@ class Game:
         return {
             "player_no": self.current_player_no,
             "player_id": self.player_ids[self.current_player_no],
-            "hand": list(c.serialize() for c in sorted(hand, key=lambda c: c.rank)),
+            "hand": serialize_iterable(sorted(hand, key=lambda c: c.rank)),
             "top_card": self.card_stack[-1].serialize() if self.card_stack else None,
-            "playable_cards": list(c.serialize() for c in sorted(playable_cards(self.card_stack, hand), key=lambda c: c.rank)),
+            "playable_cards": serialize_iterable(sorted(playable_cards(self.card_stack, hand), key=lambda c: c.rank)),
             "game_finished": self.is_game_finished(),
         }
 

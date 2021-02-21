@@ -34,6 +34,13 @@ class Player:
         self.hand = hand
         self.status = PlayerStatus.ACTIVE
 
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "hand": serialize_iterable(sorted(self.hand, key=lambda c: c.rank)),
+            "status": str(self.status),
+        }
+
 class Game:
     def __init__(self, player_ids: list[str]):
         hands = deal_hands(len(player_ids))
@@ -54,6 +61,16 @@ class Game:
             "player_no": self.current_player_no,
             "player_id": player.id,
             "hand": serialize_iterable(sorted(player.hand, key=lambda c: c.rank)),
+            "top_card": self.card_stack[-1].serialize() if self.card_stack else None,
+            "playable_cards": serialize_iterable(sorted(playable_cards(self.card_stack, player.hand), key=lambda c: c.rank)),
+            "game_finished": self.is_game_finished(),
+        }
+
+    def serialize(self) -> Dict[str, Any]:
+        player = self.players[self.current_player_no]
+        return {
+            "player_no": self.current_player_no,
+            "player": player.serialize(),
             "top_card": self.card_stack[-1].serialize() if self.card_stack else None,
             "playable_cards": serialize_iterable(sorted(playable_cards(self.card_stack, player.hand), key=lambda c: c.rank)),
             "game_finished": self.is_game_finished(),

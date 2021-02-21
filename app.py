@@ -12,7 +12,7 @@ def index():
 
 @app.route("/api/game", methods=["GET"])
 def get_game():
-    return jsonify(game.turn_details())
+    return jsonify(game.serialize())
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -41,6 +41,13 @@ class Player:
             "status": str(self.status),
         }
 
+    def serialize_with_playable_cards(self, top_card: Optional[Card]) -> Dict[str, Any]:
+        serialized_player = self.serialize()
+        serialized_hand = serialize_iterable(sorted(self.hand, key=lambda c: c.rank))
+        for serialized_card in serialized_player["hand"]:
+            serialized_card["playable"] = (top_card is None) or Card(serialized_card["value"]).is_playable(top_card)
+        return serialized_player
+
 class Game:
     def __init__(self, player_ids: list[str]):
         hands = deal_hands(len(player_ids))
@@ -68,20 +75,17 @@ class Game:
 
     def serialize(self) -> Dict[str, Any]:
         player = self.players[self.current_player_no]
-        serialized_player = player.serialize()
-        serialized_hand = serialize_iterable(sorted(player.hand, key=lambda c: c.rank))
-        for serialized_card in serialized_player["hand"]:
-            if self.card_stack:
-                serialized_card["playable"] = Card(serialized_card["value"]).is_playable(self.card_stack[-1])
-            else:
-                serialized_card["playable"] = True
-
+        serialized_player = player.serialize_with_playable_cards(self.get_top_card())
         return {
-            "player_no": self.current_player_no,
-            "player": serialized_player,
+            "current_player_no": self.current_player_no,
+            "current_player_id": player.id,
+            "player_ids": list(p.id for p in self.players),
             "top_card": self.card_stack[-1].serialize() if self.card_stack else None,
             "game_finished": self.is_game_finished(),
         }
+
+    def get_top_card(self) -> Optional[Card]:
+        return self.card_stack[-1] if self.card_stack else None
 
     def is_game_finished(self) -> bool:
         return all(p.status == PlayerStatus.FINISHED for p in self.players)

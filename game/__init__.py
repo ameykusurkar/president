@@ -73,9 +73,11 @@ class Game:
             "game_finished": self.is_game_finished(),
         }
 
+    def get_player_ids(self) -> list[str]:
+        return list(p.id for p in self.players)
+
     def serialize(self) -> Dict[str, Any]:
         player = self.players[self.current_player_no]
-        serialized_player = player.serialize_with_playable_cards(self.get_top_card())
         return {
             "current_player_no": self.current_player_no,
             "current_player_id": player.id,

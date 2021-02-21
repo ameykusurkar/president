@@ -1,5 +1,5 @@
 from random import shuffle
-from typing import List, Set, Dict, Any, Tuple, Optional
+from typing import Set, Dict, Any, Tuple, Optional, Union
 from enum import Enum
 
 FACE_RANKS = ["3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A", "2"]
@@ -25,6 +25,9 @@ class Card:
     def __hash__(self):
         return self.value
 
+    def serialize(self) -> Dict[str, Union[str, int]]:
+        return { "value": self.value, "rank": self.rank, "suit": self.suit }
+
 class PlayerStatus(Enum):
     ACTIVE   = 0
     PASSED   = 1
@@ -49,10 +52,10 @@ class TurnEvent(Enum):
     GAME_FINISHED   = 3
 
 class Game:
-    def __init__(self, player_ids: List[str]):
+    def __init__(self, player_ids: list[str]):
         self.player_ids = player_ids
         self.player_status = [PlayerStatus.ACTIVE] * len(player_ids)
-        self.card_stack: List[Card] = []
+        self.card_stack: list[Card] = []
         self.player_hands = deal_hands(len(player_ids))
         self.current_player_no = self.starting_player_no()
         self.last_card_played_player_no = -1
@@ -68,13 +71,17 @@ class Game:
         return {
             "player_no": self.current_player_no,
             "player_id": self.player_ids[self.current_player_no],
-            "hand": hand,
-            "top_card": self.card_stack[-1] if self.card_stack else None,
-            "playable_cards": playable_cards(self.card_stack, hand)
+            "hand": list(c.serialize() for c in sorted(hand, key=lambda c: c.rank)),
+            "top_card": self.card_stack[-1].serialize() if self.card_stack else None,
+            "playable_cards": list(c.serialize() for c in sorted(playable_cards(self.card_stack, hand), key=lambda c: c.rank)),
+            "game_finished": self.is_game_finished(),
         }
 
-    def play_turn(self, player_no: int, move: Move, card: Card) -> Tuple[TurnResult, List[TurnEvent]]:
-        events: List[TurnEvent] = []
+    def is_game_finished(self) -> bool:
+        return all(sts == PlayerStatus.FINISHED for sts in self.player_status)
+
+    def play_turn(self, player_no: int, move: Move, card: Card) -> Tuple[TurnResult, list[TurnEvent]]:
+        events: list[TurnEvent] = []
         if player_no != self.current_player_no:
             return TurnResult.WRONG_PLAYER, events
 
@@ -112,7 +119,7 @@ class Game:
         events.extend(next_turn_events)
         return TurnResult.SUCCESS, events
 
-    def prepare_next_turn(self) -> List[TurnEvent]:
+    def prepare_next_turn(self) -> list[TurnEvent]:
         next_player_no, events = self.find_next_player_no()
         if next_player_no == -1:
             # Game has finished
@@ -122,7 +129,7 @@ class Game:
         self.current_player_no = next_player_no
         return events
 
-    def find_next_player_no(self) -> Tuple[int, List[TurnEvent]]:
+    def find_next_player_no(self) -> Tuple[int, list[TurnEvent]]:
         """
         Assumes that `self.current_player_no` has just finished their turn.
         """
@@ -169,16 +176,16 @@ def range_wrapped(n, offset):
     for i in range(0, n):
         yield (i + offset) % n
 
-def playable_cards(card_stack: List[Card], hand: Set[Card]) -> Set[Card]:
+def playable_cards(card_stack: list[Card], hand: Set[Card]) -> Set[Card]:
     if card_stack:
         return set(card for card in hand if card.rank >= card_stack[-1].rank)
     else:
         return set(card for card in hand)
 
-def deal_hands(n: int) -> List[Set[Card]]:
+def deal_hands(n: int) -> list[Set[Card]]:
     deck = [Card(i) for i in range(52)]
     shuffle(deck)
-    hands: List[Set[Card]] = [set() for _ in range(n)]
+    hands: list[Set[Card]] = [set() for _ in range(n)]
     counter = 0
     while deck:
       hands[counter].add(deck.pop())

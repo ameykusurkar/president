@@ -68,11 +68,18 @@ class Game:
 
     def serialize(self) -> Dict[str, Any]:
         player = self.players[self.current_player_no]
+        serialized_player = player.serialize()
+        serialized_hand = serialize_iterable(sorted(player.hand, key=lambda c: c.rank))
+        for serialized_card in serialized_player["hand"]:
+            if self.card_stack:
+                serialized_card["playable"] = Card(serialized_card["value"]).is_playable(self.card_stack[-1])
+            else:
+                serialized_card["playable"] = True
+
         return {
             "player_no": self.current_player_no,
-            "player": player.serialize(),
+            "player": serialized_player,
             "top_card": self.card_stack[-1].serialize() if self.card_stack else None,
-            "playable_cards": serialize_iterable(sorted(playable_cards(self.card_stack, player.hand), key=lambda c: c.rank)),
             "game_finished": self.is_game_finished(),
         }
 

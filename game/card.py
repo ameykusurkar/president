@@ -25,3 +25,6 @@ class Card:
 
     def serialize(self) -> dict[str, Union[str, int]]:
         return { "value": self.value, "rank": self.rank, "suit": self.suit }
+
+    def is_playable(self, top_card: "Card") -> bool:
+        return self.rank >= top_card.rank

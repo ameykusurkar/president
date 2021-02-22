@@ -43,7 +43,9 @@ def index():
 
 @app.route("/api/game", methods=["GET"])
 def get_game():
-    return jsonify(game.serialize())
+    resp = jsonify(game.serialize())
+    resp.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
+    return resp
 
 @app.route("/api/game/play", methods=["POST"])
 def play_game_turn():

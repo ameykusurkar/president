@@ -1,10 +1,12 @@
 from flask import Flask, jsonify, make_response, request
 from flask_inputs import Inputs # type: ignore
 from flask_inputs.validators import JsonSchema # type: ignore
+from flask_cors import CORS # type: ignore
 
 from game import Game, Move, Card, TurnResult
 
 app = Flask(__name__)
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
 
 PLAY_TURN_SCHEMA = {
     "type": "object",

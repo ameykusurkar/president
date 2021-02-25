@@ -35,13 +35,21 @@ function App() {
     return game.current_player_id === playerID;
   }
 
-  function playTurn(move, cardValue) {
+  function canPlay(card) {
+    return isMyTurn() && card.playable;
+  }
+
+  function playTurn(move, card) {
+    if (!canPlay(card)) {
+      return;
+    }
+
     fetch("http://localhost:5000/api/game/play", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         move: move,
-        card_value: cardValue,
+        card_value: card.value,
         player_id: playerID,
       }),
     })
@@ -54,7 +62,10 @@ function App() {
     <>
       <h1>President</h1>
       <p>Whose turn: {game.current_player_id}</p>
-      <p>Last card: {game.top_card && game.top_card.description}</p>
+      <p>
+        Last card:{" "}
+        {game.top_card && String.fromCodePoint(cardAsCodePoint(game.top_card))}
+      </p>
       <h2>Players</h2>
       <div>
         {game.player_ids.map((id) => (
@@ -69,7 +80,7 @@ function App() {
         <button
           disabled={!isMyTurn()}
           onClick={() => {
-            playTurn("PASS", 0);
+            playTurn("PASS", { value: 0, playable: true });
           }}
         >
           PASS
@@ -80,10 +91,11 @@ function App() {
         {player.hand.map((card) => (
           <div
             key={card.value}
-            className={"card " + colorClass(card)}
-            disabled={!isMyTurn() || !card.playable}
+            className={`card ${colorClass(card)} ${
+              canPlay(card) ? "card-playable" : ""
+            }`}
             onClick={() => {
-              playTurn("PLAY", card.value);
+              playTurn("PLAY", card);
             }}
           >
             {String.fromCodePoint(cardAsCodePoint(card))}

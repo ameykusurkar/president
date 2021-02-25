@@ -1,18 +1,44 @@
+body {
+  margin: 0;
+}
+
 .card-list {
   display: flex;
   flex-wrap: wrap;
 }
 
 .card {
-  border-color: black;
-  border-width: 5px;
+  background-color: white;
   font-size: 600%;
+  color: grey;
 }
 
 .card-red {
+  color: #ecb2ac;
+  cursor: not-allowed;
+}
+
+.card-red.card-playable {
   color: #c0392b;
 }
 
+.card-red.card-playable:hover {
+  color: white;
+  background-color: #c0392b;
+  cursor: pointer;
+}
+
 .card-black {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.card-black.card-playable {
   color: black;
+}
+
+.card-black.card-playable:hover {
+  color: white;
+  background-color: black;
+  cursor: pointer;
 }

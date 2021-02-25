@@ -76,17 +76,17 @@ function App() {
         </button>
       </div>
       <h3>Cards</h3>
-      <div>
+      <div className="card-list">
         {player.hand.map((card) => (
-          <div key={card.value}>
-            <button
-              disabled={!isMyTurn() || !card.playable}
-              onClick={() => {
-                playTurn("PLAY", card.value);
-              }}
-            >
-              {card.description}
-            </button>
+          <div
+            key={card.value}
+            className={"card " + colorClass(card)}
+            disabled={!isMyTurn() || !card.playable}
+            onClick={() => {
+              playTurn("PLAY", card.value);
+            }}
+          >
+            {String.fromCodePoint(cardAsCodePoint(card))}
           </div>
         ))}
       </div>
@@ -100,6 +100,29 @@ function handleBadRequest(response) {
   } else {
     return Promise.reject(response);
   }
+}
+
+const codePointSuits = [
+  0x1f0c1, // Ace of Diamonds
+  0x1f0d1, // Ace of Clubs
+  0x1f0b1, // Ace of Hearts
+  0x1f0a1, // Ace of Spades
+];
+
+function cardAsCodePoint(card) {
+  const suitOffset = codePointSuits[card.suit];
+  // In President "3" is the lowest, so it has rank 0,
+  // so add 2 to get it's rank in normal playing cards.
+  var rankOffset = (card.rank + 2) % 13;
+  if (rankOffset > 10) {
+    // There's a weird "knight" card between Jack and Queen in the Unicode charset
+    rankOffset++;
+  }
+  return suitOffset + rankOffset;
+}
+
+function colorClass(card) {
+  return card.suit === 0 || card.suit === 2 ? "card-red" : "card-black";
 }
 
 export default App;

@@ -1,0 +1,18 @@
+.card-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.card {
+  border-color: black;
+  border-width: 5px;
+  font-size: 600%;
+}
+
+.card-red {
+  color: #c0392b;
+}
+
+.card-black {
+  color: black;
+}

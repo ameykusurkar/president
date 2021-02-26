@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
+import Card from "./Card";
 
 function App() {
   const [game, setGame] = useState({ player_ids: [] });
@@ -64,7 +65,14 @@ function App() {
       <p>Whose turn: {game.current_player_id}</p>
       <p>
         Last card:{" "}
-        {game.top_card && String.fromCodePoint(cardAsCodePoint(game.top_card))}
+        {game.top_card && (
+          <Card
+            key={game.top_card.value}
+            rank={game.top_card.rank}
+            suit={game.top_card.suit}
+            playable={true} // Not playable, but render in full color
+          />
+        )}
       </p>
       <h2>Players</h2>
       <div>
@@ -90,15 +98,16 @@ function App() {
       <div className="card-list">
         {player.hand.map((card) => (
           <div
-            key={card.value}
-            className={`card ${colorClass(card)} ${
-              canPlay(card) ? "card-playable" : ""
-            }`}
             onClick={() => {
               playTurn("PLAY", card);
             }}
           >
-            {String.fromCodePoint(cardAsCodePoint(card))}
+            <Card
+              key={card.value}
+              rank={card.rank}
+              suit={card.suit}
+              playable={canPlay(card)}
+            />
           </div>
         ))}
       </div>
@@ -112,29 +121,6 @@ function handleBadRequest(response) {
   } else {
     return Promise.reject(response);
   }
-}
-
-const codePointSuits = [
-  0x1f0c1, // Ace of Diamonds
-  0x1f0d1, // Ace of Clubs
-  0x1f0b1, // Ace of Hearts
-  0x1f0a1, // Ace of Spades
-];
-
-function cardAsCodePoint(card) {
-  const suitOffset = codePointSuits[card.suit];
-  // In President "3" is the lowest, so it has rank 0,
-  // so add 2 to get it's rank in normal playing cards.
-  var rankOffset = (card.rank + 2) % 13;
-  if (rankOffset > 10) {
-    // There's a weird "knight" card between Jack and Queen in the Unicode charset
-    rankOffset++;
-  }
-  return suitOffset + rankOffset;
-}
-
-function colorClass(card) {
-  return card.suit === 0 || card.suit === 2 ? "card-red" : "card-black";
 }
 
 export default App;

@@ -11,35 +11,36 @@ body {
 .card {
   background-color: white;
   font-size: 600%;
-  color: grey;
+}
+
+.top-card {
+  opacity: 1;
+}
+
+.player-card {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.player-card-playable {
+  opacity: 1;
+  cursor: pointer;
 }
 
 .card-red {
-  color: #ecb2ac;
-  cursor: not-allowed;
-}
-
-.card-red.card-playable {
   color: #c0392b;
 }
 
-.card-red.card-playable:hover {
-  color: white;
-  background-color: #c0392b;
-  cursor: pointer;
-}
-
 .card-black {
-  color: #ccc;
-  cursor: not-allowed;
-}
-
-.card-black.card-playable {
   color: black;
 }
 
-.card-black.card-playable:hover {
+.card-red.player-card-playable:hover {
+  color: white;
+  background-color: #c0392b;
+}
+
+.card-black.player-card-playable:hover {
   color: white;
   background-color: black;
-  cursor: pointer;
 }

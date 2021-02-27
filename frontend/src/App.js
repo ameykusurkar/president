@@ -70,7 +70,7 @@ function App() {
             key={game.top_card.value}
             rank={game.top_card.rank}
             suit={game.top_card.suit}
-            playable={true} // Not playable, but render in full color
+            displayType={"top-card"}
           />
         )}
       </p>
@@ -106,7 +106,9 @@ function App() {
               key={card.value}
               rank={card.rank}
               suit={card.suit}
-              playable={canPlay(card)}
+              displayType={
+                canPlay(card) ? "player-card-playable" : "player-card"
+              }
             />
           </div>
         ))}

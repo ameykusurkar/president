@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function Card({ rank, suit, playable }) {
+export default function Card({ rank, suit, displayType }) {
   function colorClass() {
     return suit === 0 || suit === 2 ? "card-red" : "card-black";
   }
@@ -18,7 +18,7 @@ export default function Card({ rank, suit, playable }) {
   }
 
   return (
-    <div className={`card ${colorClass()} ${playable ? "card-playable" : ""}`}>
+    <div className={`card ${colorClass()} ${displayType}`}>
       {String.fromCodePoint(cardAsCodePoint())}
     </div>
   );

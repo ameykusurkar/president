@@ -1,20 +1,48 @@
 body {
   margin: 0;
+  font-family: Helvetica, sans-serif;
+}
+
+.game {
+  display: grid;
+  grid-template-columns: 80vw 20vw;
+  height: 100vh;
+}
+
+.players-section {
+  grid-row: span 2;
+  border-left: 2px solid;
+  overflow-y: scroll;
+}
+
+.player-details {
+  min-height: 50px;
+}
+
+.player-details-current {
+  background-color: black;
+  color: white;
+}
+
+.you-section {
+  overflow-y: scroll;
 }
 
 .card-list {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-evenly;
+  font-size: 800%;
 }
 
 .card {
   background-color: white;
-  font-size: 600%;
+  line-height: 0.75em;
+  height: 0.9em;
 }
 
 .top-card {
   opacity: 1;
+  font-size: 1200%;
 }
 
 .player-card {

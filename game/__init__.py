@@ -38,7 +38,7 @@ class Player:
         return {
             "id": self.id,
             "hand": serialize_iterable(sorted(self.hand, key=lambda c: c.rank)),
-            "status": str(self.status),
+            "status": self.status.name,
         }
 
     def serialize_with_playable_cards(self, top_card: Optional[Card]) -> Dict[str, Any]:

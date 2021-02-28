@@ -100,7 +100,7 @@ function App() {
         </div>
         <div id="players-section">
           <h2>Players</h2>
-          <div>
+          <div id="players-list">
             {players.map((player) => (
               <div key={player.id}>
                 <div
@@ -135,23 +135,25 @@ function App() {
               PASS
             </button>
           </div>
-          <div id="card-list">
-            {youPlayer.hand.map((card) => (
-              <div
-                key={card.value}
-                onClick={() => {
-                  playTurn("PLAY", card);
-                }}
-              >
-                <Card
-                  rank={card.rank}
-                  suit={card.suit}
-                  displayType={
-                    canPlay(card) ? "player-card-playable" : "player-card"
-                  }
-                />
-              </div>
-            ))}
+          <div id="card-list-box">
+            <div id="card-list">
+              {youPlayer.hand.map((card) => (
+                <div
+                  key={card.value}
+                  onClick={() => {
+                    playTurn("PLAY", card);
+                  }}
+                >
+                  <Card
+                    rank={card.rank}
+                    suit={card.suit}
+                    displayType={
+                      canPlay(card) ? "player-card-playable" : "player-card"
+                    }
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

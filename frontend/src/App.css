@@ -83,7 +83,7 @@ button:disabled {
   grid-area: "num-cards";
 }
 
-#you-section {
+#card-list-box {
   overflow-y: scroll;
 }
 
@@ -146,4 +146,65 @@ button:disabled {
 .card-black.player-card-playable:hover {
   color: var(--color-light);
   background-color: var(--color-dark);
+}
+
+@media (max-width: 600px), (orientation: portrait) {
+  #game {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: max-content;
+  }
+
+  #game-state-section {
+    text-align: center;
+  }
+
+  #game-state-section h3 {
+    margin: 0;
+    padding: 10px 0;
+  }
+
+  #game-state-section h2 {
+    margin: 0;
+    padding: 10px 0;
+  }
+
+  #players-section {
+    grid-row: span 1;
+    overflow-y: visible;
+  }
+
+  #players-section h2 {
+    margin: 0;
+    padding: 5px;
+    text-align: center;
+  }
+
+  #players-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  #you-section {
+    border-top: 2px solid;
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: max-content;
+  }
+
+  #card-list-box {
+    grid-column: span 2;
+  }
+
+  #you-section-pass {
+    text-align: center;
+    padding: 20px;
+  }
+
+  #you-section h2 {
+    text-align: center;
+    margin: 0;
+    padding: 20px;
+  }
 }

@@ -55,6 +55,14 @@ function App() {
     return isMyTurn() && card.playable;
   }
 
+  function playerStatus(player) {
+    if (player.id === game.current_player_id) {
+      return "TO PLAY";
+    }
+
+    return player.status !== "ACTIVE" ? player.status : "";
+  }
+
   function playTurn(move, card) {
     if (!canPlay(card)) {
       return;
@@ -78,7 +86,7 @@ function App() {
     <>
       <div id="game">
         <div className="game-state-section">
-          <h3>Turn: {game.turn_no}</h3>
+          <h3>Turn {game.turn_no}</h3>
           <h2>Last Card</h2>
           {game.top_card && (
             <Card
@@ -104,10 +112,12 @@ function App() {
                   <div
                     className="player-details-id"
                     onClick={() => setPlayerID(player.id)}
-                  >{`${player.id} ${
-                    player.id === game.current_player_id ? "(to play)" : ""
-                  }`}</div>
-                  <div className="player-details-status">{player.status}</div>
+                  >
+                    {player.id}
+                  </div>
+                  <div className="player-details-status">
+                    {playerStatus(player)}
+                  </div>
                 </div>
               </div>
             ))}

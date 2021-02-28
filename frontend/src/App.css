@@ -1,14 +1,22 @@
+:root {
+  --color-dark: #1e272e;
+  --color-light: white;
+  --color-card-red: #c0392b;
+}
+
 body {
   margin: 0;
   font-family: Helvetica, sans-serif;
   box-sizing: border-box;
+  color: var(--color-dark);
+  background-color: var(--color-light);
 }
 
 button {
   padding: 3px 8px;
   border: 0;
-  background-color: black;
-  color: white;
+  background-color: var(--color-dark);
+  color: var(--color-light);
   opacity: 1;
   transition: 200ms ease-in-out;
 }
@@ -45,8 +53,8 @@ button:disabled {
 }
 
 .player-details-current {
-  background-color: black;
-  color: white;
+  background-color: var(--color-dark);
+  color: var(--color-light);
 }
 
 .player-details-id {
@@ -80,7 +88,7 @@ button:disabled {
 }
 
 .card {
-  background-color: white;
+  background-color: var(--color-light);
   line-height: 0.75em;
   height: 0.9em;
 }
@@ -98,23 +106,23 @@ button:disabled {
 .player-card-playable {
   opacity: 1;
   cursor: pointer;
-  transition: 200ms ease-in-out;
+  transition: 100ms ease-in-out;
 }
 
 .card-red {
-  color: #c0392b;
+  color: var(--color-card-red);
 }
 
 .card-black {
-  color: black;
+  color: var(--color-dark);
 }
 
 .card-red.player-card-playable:hover {
-  color: white;
-  background-color: #c0392b;
+  color: var(--color-light);
+  background-color: var(--color-card-red);
 }
 
 .card-black.player-card-playable:hover {
-  color: white;
-  background-color: black;
+  color: var(--color-light);
+  background-color: var(--color-dark);
 }

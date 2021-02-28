@@ -17,6 +17,12 @@ body {
 
 .player-details {
   min-height: 50px;
+  transition: 0.4s;
+}
+
+.player-details-id {
+  font-weight: bold;
+  font-size: 120%;
 }
 
 .player-details-current {
@@ -66,9 +72,11 @@ body {
 .card-red.player-card-playable:hover {
   color: white;
   background-color: #c0392b;
+  transition: 0.25s;
 }
 
 .card-black.player-card-playable:hover {
   color: white;
   background-color: black;
+  transition: 0.25s;
 }

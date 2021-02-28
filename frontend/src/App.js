@@ -105,9 +105,12 @@ function App() {
                       : ""
                   }`}
                 >
-                  <h3 onClick={() => setPlayerID(player.id)}>{`${player.id} ${
+                  <div
+                    className="player-details-id"
+                    onClick={() => setPlayerID(player.id)}
+                  >{`${player.id} ${
                     player.id === game.current_player_id ? "(to play)" : ""
-                  }`}</h3>
+                  }`}</div>
                   <div>{player.status}</div>
                 </div>
               </div>

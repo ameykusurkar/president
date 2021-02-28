@@ -6,6 +6,7 @@ from flask_cors import CORS # type: ignore
 from game import Game, Move, Card, TurnResult
 
 app = Flask(__name__)
+# app = Flask(__name__, static_folder='frontend/build', static_url_path='/')
 CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
 
 PLAY_TURN_SCHEMA = {
@@ -41,7 +42,7 @@ def resource_not_found(resource, resource_id):
 
 @app.route('/')
 def index():
-    return "Hello, World!"
+    return app.send_static_file('index.html')
 
 @app.route("/api/game", methods=["GET"])
 def get_game():
@@ -86,4 +87,4 @@ def get_player(player_id: str):
         return resource_not_found(resource="player", resource_id=player_id)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import "./App.css";
 import Card from "./Card";
 
+const BASE_URL = "http://localhost:5000/api";
+
 function App() {
   const [game, setGame] = useState({ player_ids: [] });
   const [players, setPlayers] = useState([]);
@@ -22,7 +24,7 @@ function App() {
   useEffect(refreshPlayers, [JSON.stringify(game.player_ids), game.turn_no]);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/players/${playerID}`)
+    fetch(`${BASE_URL}/players/${playerID}`)
       .then(handleBadRequest)
       .then((data) => setYouPlayer(data))
       .catch((response) => console.log(response));
@@ -30,9 +32,7 @@ function App() {
 
   function refreshPlayers() {
     const players = game.player_ids.map((id) => {
-      return fetch(`http://localhost:5000/api/players/${id}`).then(
-        handleBadRequest
-      );
+      return fetch(`${BASE_URL}/players/${id}`).then(handleBadRequest);
     });
 
     Promise.all(players)
@@ -41,7 +41,7 @@ function App() {
   }
 
   function refreshGame() {
-    fetch("http://localhost:5000/api/game")
+    fetch(`${BASE_URL}/game`)
       .then(handleBadRequest)
       .then((data) => setGame(data))
       .catch((response) => console.log(response));
@@ -68,7 +68,7 @@ function App() {
       return;
     }
 
-    fetch("http://localhost:5000/api/game/play", {
+    fetch(`${BASE_URL}/game/play`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

@@ -12,6 +12,7 @@ function App() {
   const [youPlayer, setYouPlayer] = useState({ hand: [] });
 
   useEffect(() => {
+    document.title = "President!";
     const interval = setInterval(refreshGame, 2000);
     return () => {
       clearInterval(interval);
@@ -81,7 +82,7 @@ function App() {
 
   return (
     <>
-      <div className="game">
+      <div id="game">
         <div className="game-state-section">
           <h2>Last Card</h2>
           {game.top_card && (
@@ -93,7 +94,7 @@ function App() {
             />
           )}
         </div>
-        <div className="players-section">
+        <div id="players-section">
           <h2>Players</h2>
           <div>
             {players.map((player) => (
@@ -111,16 +112,15 @@ function App() {
                   >{`${player.id} ${
                     player.id === game.current_player_id ? "(to play)" : ""
                   }`}</div>
-                  <div>{player.status}</div>
+                  <div className="player-details-status">{player.status}</div>
                 </div>
               </div>
             ))}
           </div>
         </div>
-        <div className="you-section">
-          <h2>You</h2>
-          <div>Player ID: {playerID}</div>
-          <div>
+        <div id="you-section">
+          <h2>You {playerID && `(${playerID})`}</h2>
+          <div id="you-section-pass">
             <button
               disabled={!isMyTurn()}
               onClick={() => {
@@ -131,7 +131,7 @@ function App() {
             </button>
           </div>
           <h3>Cards</h3>
-          <div className="card-list">
+          <div id="card-list">
             {youPlayer.hand.map((card) => (
               <div
                 key={card.value}

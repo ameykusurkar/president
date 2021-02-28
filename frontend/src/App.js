@@ -2,9 +2,6 @@ import React, { useState, useEffect } from "react";
 import "./App.css";
 import Card from "./Card";
 
-// TODO: There's a bug when checking `game.current_player_id` to refresh state:
-// there's a scenario where the game has progressed, but the current player has
-// not changed.
 function App() {
   const [game, setGame] = useState({ player_ids: [] });
   const [players, setPlayers] = useState([]);
@@ -22,17 +19,14 @@ function App() {
   // TODO: Find a good fix for this. Because `useEffect` checks referential equality on
   // `game.player_ids`, the players are fetched again even if the array elements
   // don't change.
-  useEffect(refreshPlayers, [
-    JSON.stringify(game.player_ids),
-    game.current_player_id,
-  ]);
+  useEffect(refreshPlayers, [JSON.stringify(game.player_ids), game.turn_no]);
 
   useEffect(() => {
     fetch(`http://localhost:5000/api/players/${playerID}`)
       .then(handleBadRequest)
       .then((data) => setYouPlayer(data))
       .catch((response) => console.log(response));
-  }, [playerID, game.current_player_id]);
+  }, [playerID, game.turn_no]);
 
   function refreshPlayers() {
     const players = game.player_ids.map((id) => {
@@ -84,6 +78,7 @@ function App() {
     <>
       <div id="game">
         <div className="game-state-section">
+          <h3>Turn: {game.turn_no}</h3>
           <h2>Last Card</h2>
           {game.top_card && (
             <Card

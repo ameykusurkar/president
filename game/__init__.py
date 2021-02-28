@@ -55,6 +55,7 @@ class Game:
         self.current_player_no = self.starting_player_no()
         self.card_stack: list[Card] = []
         self.last_card_played_player_no = -1
+        self.turn_no = 0
 
     def starting_player_no(self) -> int:
         """
@@ -84,6 +85,7 @@ class Game:
             "player_ids": list(p.id for p in self.players),
             "top_card": self.card_stack[-1].serialize() if self.card_stack else None,
             "game_finished": self.is_game_finished(),
+            "turn_no": self.turn_no,
         }
 
     def get_top_card(self) -> Optional[Card]:
@@ -139,6 +141,7 @@ class Game:
         elif TurnEvent.ROUND_FINISHED in events:
             self.reset_round()
         self.current_player_no = next_player_no
+        self.turn_no += 1
         return events
 
     def find_next_player_no(self) -> Tuple[int, list[TurnEvent]]:

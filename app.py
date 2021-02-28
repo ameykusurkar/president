@@ -41,6 +41,7 @@ def resource_not_found(resource, resource_id):
     return make_response(jsonify(response), 404)
 
 @app.route('/')
+@app.route('/game')
 def index():
     return app.send_static_file('index.html')
 

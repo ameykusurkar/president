@@ -6,6 +6,11 @@ export default function Card({ rank, suit, displayType }) {
   }
 
   function cardAsCodePoint() {
+    if (rank === -1) {
+      // Unicode for backface of a card
+      return 0x1f0a0;
+    }
+
     const suitOffset = codePointSuits[suit];
     // In President "3" is the lowest, so it has rank 0,
     // so add 2 to get it's rank in normal playing cards.

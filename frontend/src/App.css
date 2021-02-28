@@ -37,6 +37,10 @@ button:disabled {
   height: 100vh;
 }
 
+#game-state-section {
+  text-align: center;
+}
+
 #players-section {
   grid-row: span 2;
   border-left: 2px solid;

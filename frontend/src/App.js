@@ -85,16 +85,17 @@ function App() {
   return (
     <>
       <div id="game">
-        <div className="game-state-section">
+        <div id="game-state-section">
           <h3>Turn {game.turn_no}</h3>
           <h2>Last Card</h2>
-          {game.top_card && (
+          {game.top_card ? (
             <Card
-              key={game.top_card.value}
               rank={game.top_card.rank}
               suit={game.top_card.suit}
               displayType={"top-card"}
             />
+          ) : (
+            <Card rank={-1} displayType={"top-card"} />
           )}
         </div>
         <div id="players-section">
@@ -124,7 +125,7 @@ function App() {
           </div>
         </div>
         <div id="you-section">
-          <h2>You {playerID && `(${playerID})`}</h2>
+          <h2>{playerID}</h2>
           <div id="you-section-pass">
             <button
               disabled={!isMyTurn()}

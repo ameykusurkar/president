@@ -33,7 +33,7 @@ button:disabled {
 
 #game {
   display: grid;
-  grid-template-columns: 80vw 20vw;
+  grid-template-columns: 3.5fr 1fr;
   height: 100vh;
 }
 
@@ -49,11 +49,16 @@ button:disabled {
 
 #players-section h2 {
   padding: 10px;
+  text-align: center;
 }
 
 .player-details {
   padding: 10px;
   transition: 400ms ease-in-out;
+  display: grid;
+  grid-template-areas:
+    "player-id num-cards"
+    "status .";
 }
 
 .player-details-current {
@@ -64,19 +69,31 @@ button:disabled {
 .player-details-id {
   font-weight: bold;
   font-size: 120%;
+  grid-area: "player-id";
 }
 
 .player-details-status {
-  padding-top: 10px;
   font-style: italic;
+  grid-area: "status";
+}
+
+.player-details-num-cards {
+  font-size: 150%;
+  justify-self: right;
+  grid-area: "num-cards";
 }
 
 #you-section {
   overflow-y: scroll;
 }
 
+#you-section h2 {
+  padding-left: 20px;
+}
+
 #you-section-pass {
   text-align: center;
+  padding-bottom: 30px;
 }
 
 #you-section-pass button {

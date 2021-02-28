@@ -104,17 +104,16 @@ function App() {
             {players.map((player) => (
               <div key={player.id}>
                 <div
+                  onClick={() => setPlayerID(player.id)}
                   className={`player-details ${
                     player.id === game.current_player_id
                       ? "player-details-current"
                       : ""
                   }`}
                 >
-                  <div
-                    className="player-details-id"
-                    onClick={() => setPlayerID(player.id)}
-                  >
-                    {player.id}
+                  <div className="player-details-id">{player.id}</div>
+                  <div className="player-details-num-cards">
+                    {`${String.fromCodePoint(0x1f0a0)} ${player.hand.length}`}
                   </div>
                   <div className="player-details-status">
                     {playerStatus(player)}
@@ -136,7 +135,6 @@ function App() {
               PASS
             </button>
           </div>
-          <h3>Cards</h3>
           <div id="card-list">
             {youPlayer.hand.map((card) => (
               <div

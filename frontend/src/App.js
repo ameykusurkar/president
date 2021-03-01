@@ -12,15 +12,9 @@ export default function App() {
   return (
     <Router>
       <Switch>
-        <Route exact path="/">
-          <JoinGame />
-        </Route>
-        <Route exact path="/waiting">
-          <Waiting />
-        </Route>
-        <Route path="/game">
-          <Game />
-        </Route>
+        <Route exact path="/" component={JoinGame} />
+        <Route exact path="/waiting" component={Waiting} />
+        <Route exact path="/game" component={Game} />
       </Switch>
     </Router>
   );
@@ -44,7 +38,9 @@ function JoinGame() {
   }
 
   if (joined) {
-    return <Redirect to="/waiting" />;
+    return (
+      <Redirect to={{ pathname: "/waiting", state: { playerID: playerID } }} />
+    );
   } else {
     return (
       <div id="join-screen" className="centered-screen-box-outer">
@@ -66,7 +62,7 @@ function JoinGame() {
   }
 }
 
-function Waiting() {
+function Waiting(props) {
   const [game, setGame] = useState({ game_status: "waiting" });
 
   useEffect(() => {
@@ -100,7 +96,17 @@ function Waiting() {
           </div>
           <h3>Joined So Far</h3>
           {game.waiting_player_ids &&
-            game.waiting_player_ids.map((id) => <div key={id}>{id}</div>)}
+            game.waiting_player_ids.map((id) => (
+              <div
+                key={id}
+                style={{
+                  fontWeight:
+                    id === props.location.state.playerID ? "bold" : "normal",
+                }}
+              >
+                {id}
+              </div>
+            ))}
         </div>
       </div>
     );

@@ -3,7 +3,7 @@ import Card from "./Card";
 
 const BASE_URL = "http://localhost:5000/api";
 
-export default function Game() {
+function Game() {
   const [game, setGame] = useState({ player_ids: [] });
   const [players, setPlayers] = useState([]);
   const [playerID, setPlayerID] = useState("");
@@ -167,3 +167,5 @@ function handleBadRequest(response) {
     return Promise.reject(response);
   }
 }
+
+export { Game, BASE_URL, handleBadRequest };

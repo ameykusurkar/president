@@ -3,6 +3,8 @@ from flask_inputs import Inputs # type: ignore
 from flask_inputs.validators import JsonSchema # type: ignore
 from flask_cors import CORS # type: ignore
 
+from typing import Optional
+
 from game import Game, Move, Card, TurnResult
 
 app = Flask(__name__)
@@ -28,11 +30,25 @@ PLAY_TURN_SCHEMA = {
     "required": ["player_id", "card_value", "move"]
 }
 
+JOIN_GAME_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "player_id": {
+            "type": "string",
+            "minLength": 1,
+        },
+    },
+    "required": ["player_id"]
+}
+
 class PlayTurnInputs(Inputs):
     json = [JsonSchema(schema=PLAY_TURN_SCHEMA)]
 
-player_ids = ["player1", "player2", "player3"]
-game = Game(player_ids)
+class JoinGameInputs(Inputs):
+    json = [JsonSchema(schema=JOIN_GAME_SCHEMA)]
+
+waiting_player_ids: list[str] = []
+game: Optional[Game] = None
 
 def resource_not_found(resource, resource_id):
     response = {
@@ -47,10 +63,43 @@ def index():
 
 @app.route("/api/game", methods=["GET"])
 def get_game():
+    if not game:
+        return make_response(jsonify({
+            "waiting_player_ids": waiting_player_ids,
+            "game_status": "waiting",
+        }), 200)
     return jsonify(game.serialize())
+
+@app.route("/api/game/join", methods=["POST"])
+def join_game():
+    inputs = JoinGameInputs(request)
+    if not inputs.validate():
+        return { "errors": inputs.errors }, 400
+
+    if game:
+        return { "error": "game_already_started" }, 400
+
+    player_id = request.json["player_id"]
+
+    if player_id in waiting_player_ids:
+        return { "error": "player_id_already_joined" }, 400
+
+    waiting_player_ids.append(player_id)
+    return make_response(jsonify({}), 200)
+
+@app.route("/api/game/start", methods=["POST"])
+def start_game():
+    if len(waiting_player_ids) < 2:
+        return { "error": "need_at_least_two_players" }, 400
+    global game
+    game = Game(waiting_player_ids)
+    return make_response(jsonify({}), 200)
 
 @app.route("/api/game/play", methods=["POST"])
 def play_game_turn():
+    if not game:
+        return resource_not_found(resource="game", resource_id="0")
+
     inputs = PlayTurnInputs(request)
     if not inputs.validate():
         return { "errors": inputs.errors }, 400
@@ -81,6 +130,8 @@ def play_game_turn():
 
 @app.route("/api/players/<player_id>", methods=["GET"])
 def get_player(player_id: str):
+    if not game:
+        return resource_not_found(resource="game", resource_id="0")
     try:
         top_card = game.get_top_card()
         return next(p.serialize_with_playable_cards(top_card) for p in game.players if p.id == player_id)

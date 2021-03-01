@@ -47,13 +47,19 @@ function JoinGame() {
     return <Redirect to="/waiting" />;
   } else {
     return (
-      <div id="join-game-box">
-        <div>Player ID:</div>
-        <div>
-          <input type="text" onChange={(e) => setPlayerID(e.target.value)} />
-        </div>
-        <div>
-          <button onClick={joinGame}>Join Game</button>
+      <div id="join-screen" className="centered-screen-box-outer">
+        <div className="centered-screen-box">
+          <div id="join-game-player-id">
+            <div>Player ID</div>
+            <input
+              id="join-game-input"
+              type="text"
+              onChange={(e) => setPlayerID(e.target.value)}
+            />
+          </div>
+          <div id="join-game-box-button-outer">
+            <button onClick={joinGame}>Join Game</button>
+          </div>
         </div>
       </div>
     );
@@ -86,13 +92,15 @@ function Waiting() {
 
   if (game.game_status === "waiting") {
     return (
-      <div>
-        <h2>Waiting to start game...</h2>
-        <h3>Joined so far</h3>
-        {game.waiting_player_ids &&
-          game.waiting_player_ids.map((id) => <div key={id}>{id}</div>)}
-        <div>
-          <button onClick={startGame}>Start Game</button>
+      <div id="waiting-screen" className="centered-screen-box-outer">
+        <div className="centered-screen-box">
+          <h2>Waiting...</h2>
+          <div>
+            <button onClick={startGame}>Start Game</button>
+          </div>
+          <h3>Joined So Far</h3>
+          {game.waiting_player_ids &&
+            game.waiting_player_ids.map((id) => <div key={id}>{id}</div>)}
         </div>
       </div>
     );

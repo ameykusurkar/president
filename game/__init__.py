@@ -84,7 +84,7 @@ class Game:
             "current_player_id": player.id,
             "player_ids": list(p.id for p in self.players),
             "top_card": self.card_stack[-1].serialize() if self.card_stack else None,
-            "game_finished": self.is_game_finished(),
+            "game_status": "finished" if self.is_game_finished() else "playing",
             "turn_no": self.turn_no,
         }
 

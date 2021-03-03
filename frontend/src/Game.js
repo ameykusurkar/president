@@ -3,10 +3,9 @@ import Card from "./Card";
 
 const BASE_URL = "http://localhost:5000/api";
 
-function Game() {
-  const [game, setGame] = useState({ player_ids: [] });
-  const [players, setPlayers] = useState([]);
-  const [playerID, setPlayerID] = useState("");
+function Game({ defaultPlayerID }) {
+  const [game, setGame] = useState({ game_status: "loading" });
+  const [playerID, setPlayerID] = useState(defaultPlayerID);
   const [youPlayer, setYouPlayer] = useState({ hand: [] });
 
   useEffect(() => {
@@ -17,27 +16,12 @@ function Game() {
     };
   }, []);
 
-  // TODO: Find a good fix for this. Because `useEffect` checks referential equality on
-  // `game.player_ids`, the players are fetched again even if the array elements
-  // don't change.
-  useEffect(refreshPlayers, [JSON.stringify(game.player_ids), game.turn_no]);
-
   useEffect(() => {
     fetch(`${BASE_URL}/players/${playerID}`)
       .then(handleBadRequest)
       .then((data) => setYouPlayer(data))
       .catch((response) => console.log(response));
   }, [playerID, game.turn_no]);
-
-  function refreshPlayers() {
-    const players = game.player_ids.map((id) => {
-      return fetch(`${BASE_URL}/players/${id}`).then(handleBadRequest);
-    });
-
-    Promise.all(players)
-      .then((playersData) => setPlayers(playersData))
-      .catch((response) => console.log(response));
-  }
 
   function refreshGame() {
     fetch(`${BASE_URL}/game`)
@@ -52,14 +36,6 @@ function Game() {
 
   function canPlay(card) {
     return isMyTurn() && card.playable;
-  }
-
-  function playerStatus(player) {
-    if (player.id === game.current_player_id) {
-      return "TO PLAY";
-    }
-
-    return player.status !== "ACTIVE" ? player.status : "";
   }
 
   function playTurn(move, card) {
@@ -81,6 +57,16 @@ function Game() {
       .catch((response) => console.log(response));
   }
 
+  if (game.game_status === "loading") {
+    return "Loading...";
+  }
+
+  if (game.game_status === "waiting") {
+    return (
+      <Waiting waitingPlayerIds={game.waiting_player_ids} playerID={playerID} />
+    );
+  }
+
   return (
     <>
       <div id="game">
@@ -99,28 +85,12 @@ function Game() {
         </div>
         <div id="players-section">
           <h2>Players</h2>
-          <div id="players-list">
-            {players.map((player) => (
-              <div key={player.id}>
-                <div
-                  onClick={() => setPlayerID(player.id)}
-                  className={`player-details ${
-                    player.id === game.current_player_id
-                      ? "player-details-current"
-                      : ""
-                  }`}
-                >
-                  <div className="player-details-id">{player.id}</div>
-                  <div className="player-details-num-cards">
-                    {`${String.fromCodePoint(0x1f0a0)} ${player.hand.length}`}
-                  </div>
-                  <div className="player-details-status">
-                    {playerStatus(player)}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <Players
+            playerIds={game.player_ids}
+            turnNo={game.turn_no}
+            currentPlayerId={game.current_player_id}
+            setPlayerID={setPlayerID}
+          />
         </div>
         <div id="you-section">
           <h2>{playerID}</h2>
@@ -157,6 +127,88 @@ function Game() {
         </div>
       </div>
     </>
+  );
+}
+
+function Waiting({ waitingPlayerIds, playerID }) {
+  function startGame() {
+    fetch(`${BASE_URL}/game/start`, { method: "POST" })
+      .then(handleBadRequest)
+      .then((data) => console.log("started game"))
+      .catch((response) => console.log(response));
+  }
+
+  return (
+    <div id="waiting-screen" className="centered-screen-box-outer">
+      <div className="centered-screen-box">
+        <h2>Waiting...</h2>
+        {waitingPlayerIds.length >= 2 && (
+          <div>
+            <button onClick={startGame}>Start Game</button>
+          </div>
+        )}
+        <h3>Joined So Far</h3>
+        {waitingPlayerIds &&
+          waitingPlayerIds.map((id) => (
+            <div
+              key={id}
+              style={{
+                fontWeight: id === playerID ? "bold" : "normal",
+              }}
+            >
+              {id}
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+}
+
+function Players({ playerIds, turnNo, currentPlayerId, setPlayerID }) {
+  const [players, setPlayers] = useState([]);
+
+  // TODO: Find a good fix for this. Because `useEffect` checks referential equality on
+  // `game.player_ids`, the players are fetched again even if the array elements
+  // don't change.
+  useEffect(refreshPlayers, [JSON.stringify(playerIds), turnNo]);
+
+  function refreshPlayers() {
+    const players = playerIds.map((id) => {
+      return fetch(`${BASE_URL}/players/${id}`).then(handleBadRequest);
+    });
+
+    Promise.all(players)
+      .then((playersData) => setPlayers(playersData))
+      .catch((response) => console.log(response));
+  }
+
+  function playerStatus(player) {
+    if (player.id === currentPlayerId) {
+      return "TO PLAY";
+    }
+
+    return player.status !== "ACTIVE" ? player.status : "";
+  }
+
+  return (
+    <div id="players-list">
+      {players.map((player) => (
+        <div key={player.id}>
+          <div
+            onClick={() => setPlayerID(player.id)}
+            className={`player-details ${
+              player.id === currentPlayerId ? "player-details-current" : ""
+            }`}
+          >
+            <div className="player-details-id">{player.id}</div>
+            <div className="player-details-num-cards">
+              {`${String.fromCodePoint(0x1f0a0)} ${player.hand.length}`}
+            </div>
+            <div className="player-details-status">{playerStatus(player)}</div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

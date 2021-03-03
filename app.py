@@ -89,9 +89,11 @@ def join_game():
 
 @app.route("/api/game/start", methods=["POST"])
 def start_game():
+    global game
+    if game:
+        return make_response(jsonify({}), 200)
     if len(waiting_player_ids) < 2:
         return { "error": "need_at_least_two_players" }, 400
-    global game
     game = Game(waiting_player_ids)
     return make_response(jsonify({}), 200)
 

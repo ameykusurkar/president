@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Card from "./Card";
 
-const BASE_URL = "http://localhost:5000/api";
+const BASE_URL = `${process.env.REACT_APP_SERVER_URL}/api`;
 
 function Game({ defaultPlayerID }) {
   const [game, setGame] = useState({ game_status: "loading" });

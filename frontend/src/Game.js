@@ -170,6 +170,7 @@ function Players({ playerIds, turnNo, currentPlayerId, setPlayerID }) {
   // TODO: Find a good fix for this. Because `useEffect` checks referential equality on
   // `game.player_ids`, the players are fetched again even if the array elements
   // don't change.
+  // eslint-disable-next-line
   useEffect(refreshPlayers, [JSON.stringify(playerIds), turnNo]);
 
   function refreshPlayers() {

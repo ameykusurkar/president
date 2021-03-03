@@ -1,4 +1,4 @@
-.PHONY: server frontend install
+.PHONY: server frontend install build
 
 server:
 	python app.py
@@ -9,3 +9,6 @@ frontend:
 install:
 	pip install -r requirements.txt
 	cd frontend && npm install
+
+build:
+	cd frontend && npm run build

@@ -8,7 +8,7 @@ from typing import Optional
 from game import Game, Move, Card, TurnResult
 
 app = Flask(__name__, static_folder='frontend/build', static_url_path='/')
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 PLAY_TURN_SCHEMA = {
     "type": "object",

@@ -3,7 +3,7 @@ import Card from "./Card";
 
 const BASE_URL = `${process.env.REACT_APP_SERVER_URL}/api`;
 
-function Game({ defaultPlayerID }) {
+function Game({ defaultPlayerID, gameID }) {
   const [game, setGame] = useState({ game_status: "loading" });
   const [playerID, setPlayerID] = useState(defaultPlayerID);
   const [youPlayer, setYouPlayer] = useState({ hand: [] });
@@ -17,14 +17,14 @@ function Game({ defaultPlayerID }) {
   }, []);
 
   useEffect(() => {
-    fetch(`${BASE_URL}/players/${playerID}`)
+    fetch(`${BASE_URL}/games/${gameID}/players/${playerID}`)
       .then(handleBadRequest)
       .then((data) => setYouPlayer(data))
       .catch((response) => console.log(response));
   }, [playerID, game.turn_no]);
 
   function refreshGame() {
-    fetch(`${BASE_URL}/game`)
+    fetch(`${BASE_URL}/games/${gameID}`)
       .then(handleBadRequest)
       .then((data) => setGame(data))
       .catch((response) => console.log(response));
@@ -43,7 +43,7 @@ function Game({ defaultPlayerID }) {
       return;
     }
 
-    fetch(`${BASE_URL}/game/play`, {
+    fetch(`${BASE_URL}/games/${gameID}/play`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -63,7 +63,11 @@ function Game({ defaultPlayerID }) {
 
   if (game.game_status === "waiting") {
     return (
-      <Waiting waitingPlayerIds={game.waiting_player_ids} playerID={playerID} />
+      <Waiting
+        gameID={gameID}
+        playerIds={game.player_ids}
+        playerID={playerID}
+      />
     );
   }
 
@@ -86,6 +90,7 @@ function Game({ defaultPlayerID }) {
         <div id="players-section">
           <h2>Players</h2>
           <Players
+            gameID={gameID}
             playerIds={game.player_ids}
             turnNo={game.turn_no}
             currentPlayerId={game.current_player_id}
@@ -130,9 +135,9 @@ function Game({ defaultPlayerID }) {
   );
 }
 
-function Waiting({ waitingPlayerIds, playerID }) {
+function Waiting({ gameID, playerIds, playerID }) {
   function startGame() {
-    fetch(`${BASE_URL}/game/start`, { method: "POST" })
+    fetch(`${BASE_URL}/games/${gameID}/start`, { method: "POST" })
       .then(handleBadRequest)
       .then((data) => console.log("started game"))
       .catch((response) => console.log(response));
@@ -142,14 +147,14 @@ function Waiting({ waitingPlayerIds, playerID }) {
     <div id="waiting-screen" className="centered-screen-box-outer">
       <div className="centered-screen-box">
         <h2>Waiting...</h2>
-        {waitingPlayerIds.length >= 2 && (
+        {playerIds.length >= 2 && (
           <div>
             <button onClick={startGame}>Start Game</button>
           </div>
         )}
         <h3>Joined So Far</h3>
-        {waitingPlayerIds &&
-          waitingPlayerIds.map((id) => (
+        {playerIds &&
+          playerIds.map((id) => (
             <div
               key={id}
               style={{
@@ -164,7 +169,7 @@ function Waiting({ waitingPlayerIds, playerID }) {
   );
 }
 
-function Players({ playerIds, turnNo, currentPlayerId, setPlayerID }) {
+function Players({ gameID, playerIds, turnNo, currentPlayerId, setPlayerID }) {
   const [players, setPlayers] = useState([]);
 
   // TODO: Find a good fix for this. Because `useEffect` checks referential equality on
@@ -175,7 +180,9 @@ function Players({ playerIds, turnNo, currentPlayerId, setPlayerID }) {
 
   function refreshPlayers() {
     const players = playerIds.map((id) => {
-      return fetch(`${BASE_URL}/players/${id}`).then(handleBadRequest);
+      return fetch(`${BASE_URL}/games/${gameID}/players/${id}`).then(
+        handleBadRequest
+      );
     });
 
     Promise.all(players)

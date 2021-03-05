@@ -1,5 +1,5 @@
 from random import shuffle
-from typing import Set, Dict, Any, Tuple, Optional, Union
+from typing import Set, Dict, Any, Optional
 from enum import Enum
 
 from serialize import serialize_iterable
@@ -74,9 +74,6 @@ class Game:
             "game_finished": self.is_game_finished(),
         }
 
-    def get_player_ids(self) -> list[str]:
-        return list(p.id for p in self.players)
-
     def serialize(self) -> Dict[str, Any]:
         player = self.players[self.current_player_no]
         return {
@@ -94,7 +91,7 @@ class Game:
     def is_game_finished(self) -> bool:
         return all(p.status == PlayerStatus.FINISHED for p in self.players)
 
-    def play_turn(self, player_no: int, move: Move, card: Card) -> Tuple[TurnResult, list[TurnEvent]]:
+    def play_turn(self, player_no: int, move: Move, card: Card) -> tuple[TurnResult, list[TurnEvent]]:
         events: list[TurnEvent] = []
         if player_no != self.current_player_no:
             return TurnResult.WRONG_PLAYER, events
@@ -144,7 +141,7 @@ class Game:
         self.turn_no += 1
         return events
 
-    def find_next_player_no(self) -> Tuple[int, list[TurnEvent]]:
+    def find_next_player_no(self) -> tuple[int, list[TurnEvent]]:
         """
         Assumes that `self.current_player_no` has just finished their turn.
         """

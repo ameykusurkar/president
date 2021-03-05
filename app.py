@@ -29,6 +29,17 @@ PLAY_TURN_SCHEMA = {
     "required": ["player_id", "card_value", "move"]
 }
 
+CREATE_GAME_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "player_id": {
+            "type": "string",
+            "minLength": 1,
+        },
+    },
+    "required": ["player_id"]
+}
+
 JOIN_GAME_SCHEMA = {
     "type": "object",
     "properties": {
@@ -46,8 +57,11 @@ class PlayTurnInputs(Inputs):
 class JoinGameInputs(Inputs):
     json = [JsonSchema(schema=JOIN_GAME_SCHEMA)]
 
-waiting_player_ids: list[str] = []
-game: Optional[Game] = None
+class CreateGameInputs(Inputs):
+    json = [JsonSchema(schema=CREATE_GAME_SCHEMA)]
+
+pending_games: dict[str, list[str]] = {}
+games: dict[str, Game] = {}
 
 def resource_not_found(resource, resource_id):
     response = {
@@ -56,50 +70,71 @@ def resource_not_found(resource, resource_id):
     return make_response(jsonify(response), 404)
 
 @app.route('/')
-@app.route('/game')
 def index():
-    return app.send_static_file('index.html')
+    return jsonify({ "status": "healthy" })
 
-@app.route("/api/game", methods=["GET"])
-def get_game():
-    if not game:
-        return make_response(jsonify({
-            "waiting_player_ids": waiting_player_ids,
+@app.route("/api/games/<game_id>", methods=["GET"])
+def get_game(game_id: str):
+    if game_id in pending_games:
+        return jsonify({
+            "player_ids": pending_games[game_id],
             "game_status": "waiting",
-        }), 200)
-    return jsonify(game.serialize())
+        })
+    if game_id in games:
+        return jsonify(games[game_id].serialize())
 
-@app.route("/api/game/join", methods=["POST"])
-def join_game():
+    return resource_not_found(resource="game", resource_id=game_id)
+
+@app.route("/api/games", methods=["POST"])
+def create_game():
+    inputs = CreateGameInputs(request)
+    if not inputs.validate():
+        return { "errors": inputs.errors }, 400
+
+    game_id = str(len(games) + len(pending_games))
+    pending_games[game_id] = [request.json["player_id"]]
+    return jsonify({ "game_id": game_id }), 201
+
+@app.route("/api/games/<game_id>/join", methods=["POST"])
+def join_game(game_id: str):
+    if game_id in games:
+        return { "error": "game_already_started" }, 400
+    if game_id not in pending_games:
+        return resource_not_found(resource="game", resource_id=game_id)
+
     inputs = JoinGameInputs(request)
     if not inputs.validate():
         return { "errors": inputs.errors }, 400
 
-    if game:
-        return { "error": "game_already_started" }, 400
-
     player_id = request.json["player_id"]
 
-    if player_id in waiting_player_ids:
+    if player_id in pending_games[game_id]:
         return { "error": "player_id_already_joined" }, 400
 
-    waiting_player_ids.append(player_id)
-    return make_response(jsonify({}), 200)
+    pending_games[game_id].append(player_id)
+    return jsonify(""), 200
 
-@app.route("/api/game/start", methods=["POST"])
-def start_game():
-    global game
-    if game:
-        return make_response(jsonify({}), 200)
-    if len(waiting_player_ids) < 2:
+# TODO: Only game leader can start the game
+@app.route("/api/games/<game_id>/start", methods=["POST"])
+def start_game(game_id: str):
+    if game_id in games:
+        return jsonify(""), 200
+    if game_id not in pending_games:
+        return resource_not_found(resource="game", resource_id=game_id)
+    if len(pending_games[game_id]) < 2:
         return { "error": "need_at_least_two_players" }, 400
-    game = Game(waiting_player_ids)
-    return make_response(jsonify({}), 200)
 
-@app.route("/api/game/play", methods=["POST"])
-def play_game_turn():
-    if not game:
-        return resource_not_found(resource="game", resource_id="0")
+    player_ids = pending_games[game_id]
+    pending_games.pop(game_id)
+    games[game_id] = Game(player_ids)
+    return jsonify(""), 200
+
+@app.route("/api/games/<game_id>/play", methods=["POST"])
+def play_game_turn(game_id: str):
+    if game_id in pending_games:
+        return { "error": "game_not_started" }, 400
+    if game_id not in games:
+        return resource_not_found(resource="game", resource_id=game_id)
 
     inputs = PlayTurnInputs(request)
     if not inputs.validate():
@@ -109,6 +144,7 @@ def play_game_turn():
     move = request.json["move"]
     card_value = request.json["card_value"]
 
+    game = games[game_id]
     try:
         player_no = next(i for i, p in enumerate(game.players) if p.id == player_id)
     except StopIteration:
@@ -129,10 +165,14 @@ def play_game_turn():
     else:
         return { "error": result.name, "result": result.name }, 400
 
-@app.route("/api/players/<player_id>", methods=["GET"])
-def get_player(player_id: str):
-    if not game:
-        return resource_not_found(resource="game", resource_id="0")
+@app.route("/api/games/<game_id>/players/<player_id>", methods=["GET"])
+def get_player(game_id: str, player_id: str):
+    if game_id in pending_games:
+        return { "error": "game_not_started" }, 400
+    if game_id not in games:
+        return resource_not_found(resource="game", resource_id=game_id)
+
+    game = games[game_id]
     try:
         top_card = game.get_top_card()
         return next(p.serialize_with_playable_cards(top_card) for p in game.players if p.id == player_id)

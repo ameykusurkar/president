@@ -15,11 +15,16 @@ export default function App() {
         <Route exact path="/" render={() => <JoinGame />} />
         <Route
           exact
-          path="/game"
+          path="/games/:id"
           render={(props) => {
             const defaultPlayerID =
               props.location.state && props.location.state.playerID;
-            return <Game defaultPlayerID={defaultPlayerID} />;
+            return (
+              <Game
+                defaultPlayerID={defaultPlayerID}
+                gameID={props.match.params.id}
+              />
+            );
           }}
         />
       </Switch>
@@ -30,9 +35,10 @@ export default function App() {
 function JoinGame() {
   const [joined, setJoined] = useState(false);
   const [playerID, setPlayerID] = useState("");
+  const [gameID, setGameID] = useState("");
 
   function joinGame() {
-    fetch(`${BASE_URL}/game/join`, {
+    fetch(`${BASE_URL}/games/${gameID}/join`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -46,16 +52,29 @@ function JoinGame() {
 
   if (joined) {
     return (
-      <Redirect to={{ pathname: "/game", state: { playerID: playerID } }} />
+      <Redirect
+        to={{
+          pathname: `/games/${gameID}`,
+          state: { playerID: playerID },
+        }}
+      />
     );
   } else {
     return (
       <div id="join-screen" className="centered-screen-box-outer">
         <div className="centered-screen-box">
-          <div id="join-game-player-id">
-            <div>Player ID</div>
+          <div className="join-game-form-box">
+            <div className="join-game-label">Game ID</div>
             <input
-              id="join-game-input"
+              className="join-game-input"
+              type="text"
+              onChange={(e) => setGameID(e.target.value)}
+            />
+          </div>
+          <div className="join-game-form-box">
+            <div className="join-game-label">Player ID</div>
+            <input
+              className="join-game-input"
               type="text"
               onChange={(e) => setPlayerID(e.target.value)}
             />

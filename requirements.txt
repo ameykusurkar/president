@@ -1,5 +1,7 @@
 flask
 flask-inputs
 flask-cors
+flask-sqlalchemy
 jsonschema
 gunicorn
+psycopg2-binary

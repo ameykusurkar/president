@@ -1,13 +1,26 @@
+from typing import Optional
+import os
+
 from flask import Flask, jsonify, make_response, request
 from flask_inputs import Inputs # type: ignore
 from flask_inputs.validators import JsonSchema # type: ignore
 from flask_cors import CORS # type: ignore
 
-from typing import Optional
-
+from models import db
 from game import Game, Move, Card, TurnResult
 
 app = Flask(__name__)
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = (
+    "postgresql://" +
+    os.environ["PGUSER"] + ":" +
+    os.environ.get("PGPASSWORD", "") + "@" +
+    os.environ.get("PGHOST", "localhost") + "/" +
+    os.environ["PGDATABASE"]
+)
+
+db.init_app(app)
+
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 PLAY_TURN_SCHEMA = {

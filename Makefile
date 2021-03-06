@@ -8,6 +8,9 @@ PGHOST=localhost
 server:
 	PGUSER=$(PGUSER) PGDATABASE=$(PGDATABASE) PGHOST=$(PGHOST) python app.py
 
+console:
+	PGUSER=$(PGUSER) PGDATABASE=$(PGDATABASE) PGHOST=$(PGHOST) python
+
 frontend:
 	cd frontend && REACT_APP_SERVER_URL="http://localhost:5000" npm start
 

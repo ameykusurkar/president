@@ -1,4 +1,5 @@
 from typing import Optional
+import logging
 import os
 
 from flask import Flask, jsonify, make_response, request
@@ -7,7 +8,11 @@ from flask_inputs.validators import JsonSchema # type: ignore
 from flask_cors import CORS # type: ignore
 
 from models import db
+import models
 from game import Game, Move, Card, TurnResult
+
+logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -88,11 +93,14 @@ def index():
 
 @app.route("/api/games/<game_id>", methods=["GET"])
 def get_game(game_id: str):
-    if game_id in pending_games:
-        return jsonify({
-            "player_ids": pending_games[game_id],
-            "game_status": "waiting",
-        })
+    with app.app_context():
+        game = models.Game.query.get(game_id)
+        if game:
+            player_ids = list(p.user_id for p in game.players)
+            return jsonify({
+                "player_ids": player_ids,
+                "status": game.status,
+            })
     if game_id in games:
         return jsonify(games[game_id].serialize())
 
@@ -104,9 +112,16 @@ def create_game():
     if not inputs.validate():
         return { "errors": inputs.errors }, 400
 
-    game_id = str(len(games) + len(pending_games))
-    pending_games[game_id] = [request.json["player_id"]]
-    return jsonify({ "game_id": game_id }), 201
+    response = {}
+    with app.app_context():
+        game = models.Game()
+        db.session.add(game)
+        db.session.flush()
+        response["game_id"] = game.id
+        player = models.Player(user_id=request.json["player_id"], game_id=game.id)
+        db.session.add(player)
+        db.session.commit()
+    return jsonify(response), 201
 
 @app.route("/api/games/<game_id>/join", methods=["POST"])
 def join_game(game_id: str):

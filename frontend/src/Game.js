@@ -4,7 +4,7 @@ import Card from "./Card";
 const BASE_URL = `${process.env.REACT_APP_SERVER_URL}/api`;
 
 function Game({ defaultPlayerID, gameID }) {
-  const [game, setGame] = useState({ game_status: "loading" });
+  const [game, setGame] = useState({ status: "loading" });
   const [playerID, setPlayerID] = useState(defaultPlayerID);
   const [youPlayer, setYouPlayer] = useState({ hand: [] });
 
@@ -14,6 +14,7 @@ function Game({ defaultPlayerID, gameID }) {
     return () => {
       clearInterval(interval);
     };
+  // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
@@ -21,7 +22,7 @@ function Game({ defaultPlayerID, gameID }) {
       .then(handleBadRequest)
       .then((data) => setYouPlayer(data))
       .catch((response) => console.log(response));
-  }, [playerID, game.turn_no]);
+  }, [gameID, playerID, game.turn_number]);
 
   function refreshGame() {
     fetch(`${BASE_URL}/games/${gameID}`)
@@ -57,11 +58,11 @@ function Game({ defaultPlayerID, gameID }) {
       .catch((response) => console.log(response));
   }
 
-  if (game.game_status === "loading") {
+  if (game.status === "loading") {
     return "Loading...";
   }
 
-  if (game.game_status === "waiting") {
+  if (game.status === "waiting") {
     return (
       <Waiting
         gameID={gameID}
@@ -75,12 +76,12 @@ function Game({ defaultPlayerID, gameID }) {
     <>
       <div id="game">
         <div id="game-state-section">
-          <h3>Turn {game.turn_no}</h3>
+          <h3>Turn {game.turn_number}</h3>
           <h2>Last Card</h2>
-          {game.top_card ? (
+          {game.last_card ? (
             <Card
-              rank={game.top_card.rank}
-              suit={game.top_card.suit}
+              rank={game.last_card.rank}
+              suit={game.last_card.suit}
               displayType={"top-card"}
             />
           ) : (
@@ -92,7 +93,7 @@ function Game({ defaultPlayerID, gameID }) {
           <Players
             gameID={gameID}
             playerIds={game.player_ids}
-            turnNo={game.turn_no}
+            turnNo={game.turn_number}
             currentPlayerId={game.current_player_id}
             setPlayerID={setPlayerID}
           />
@@ -111,22 +112,24 @@ function Game({ defaultPlayerID, gameID }) {
           </div>
           <div id="card-list-box">
             <div id="card-list">
-              {youPlayer.hand.map((card) => (
-                <div
-                  key={card.value}
-                  onClick={() => {
-                    playTurn("PLAY", card);
-                  }}
-                >
-                  <Card
-                    rank={card.rank}
-                    suit={card.suit}
-                    displayType={
-                      canPlay(card) ? "player-card-playable" : "player-card"
-                    }
-                  />
-                </div>
-              ))}
+              {youPlayer.hand
+                .sort((a, b) => a.rank - b.rank)
+                .map((card) => (
+                  <div
+                    key={card.value}
+                    onClick={() => {
+                      playTurn("PLAY", card);
+                    }}
+                  >
+                    <Card
+                      rank={card.rank}
+                      suit={card.suit}
+                      displayType={
+                        canPlay(card) ? "player-card-playable" : "player-card"
+                      }
+                    />
+                  </div>
+                ))}
             </div>
           </div>
         </div>
@@ -191,7 +194,7 @@ function Players({ gameID, playerIds, turnNo, currentPlayerId, setPlayerID }) {
   }
 
   function playerStatus(player) {
-    if (player.id === currentPlayerId) {
+    if (player.user_id === currentPlayerId) {
       return "TO PLAY";
     }
 
@@ -200,22 +203,28 @@ function Players({ gameID, playerIds, turnNo, currentPlayerId, setPlayerID }) {
 
   return (
     <div id="players-list">
-      {players.map((player) => (
-        <div key={player.id}>
-          <div
-            onClick={() => setPlayerID(player.id)}
-            className={`player-details ${
-              player.id === currentPlayerId ? "player-details-current" : ""
-            }`}
-          >
-            <div className="player-details-id">{player.id}</div>
-            <div className="player-details-num-cards">
-              {`${String.fromCodePoint(0x1f0a0)} ${player.hand.length}`}
+      {players
+        .sort((a, b) => a.game_player_index - b.game_player_index)
+        .map((player) => (
+          <div key={player.id}>
+            <div
+              onClick={() => setPlayerID(player.user_id)}
+              className={`player-details ${
+                player.user_id === currentPlayerId
+                  ? "player-details-current"
+                  : ""
+              }`}
+            >
+              <div className="player-details-id">{player.user_id}</div>
+              <div className="player-details-num-cards">
+                {`${String.fromCodePoint(0x1f0a0)} ${player.hand.length}`}
+              </div>
+              <div className="player-details-status">
+                {playerStatus(player)}
+              </div>
             </div>
-            <div className="player-details-status">{playerStatus(player)}</div>
           </div>
-        </div>
-      ))}
+        ))}
     </div>
   );
 }

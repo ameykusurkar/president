@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship # type: ignore
 
 from models.base import db
 from models.player import Player
-from game import Card
+import card as Card
 
 class Game(db.Model): # type: ignore
     id = Column(Integer, primary_key=True)
@@ -46,8 +46,8 @@ class Game(db.Model): # type: ignore
             "id": self.id,
             "turn_number": self.turn_number,
             "current_player_index": self.current_player_index,
-            "current_player_id": current_player.user_id,
-            "last_card": Card(self.last_card).serialize() if self.last_card else None,
+            "current_player_id": current_player.user_id if current_player else None,
+            "last_card": Card.serialize(self.last_card) if self.last_card else None,
             "player_ids": player_ids,
             "status": self.status,
         }

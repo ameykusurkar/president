@@ -6,7 +6,7 @@ from sqlalchemy.types import ARRAY # type: ignore
 
 from models.base import db
 from serialize import serialize_iterable
-from game.card import Card
+import card as Card
 
 class PlayerStatus(str, Enum):
     ACTIVE   = "ACTIVE"
@@ -33,13 +33,12 @@ class Player(db.Model): # type: ignore
             "game_id": self.game_id,
             "game_player_index": self.game_player_index,
             "user_id": self.user_id,
-            # TODO: Don't need to initialize a Card object here
-            "hand": [Card(c).serialize() for c in self.hand] if self.hand else self.hand,
+            "hand": [Card.serialize(c) for c in self.hand] if self.hand else self.hand,
             "status": self.status,
         }
 
-    def serialize_with_playable_cards(self, top_card: Optional[Card]) -> dict[str, Any]:
+    def serialize_with_playable_cards(self, top_card: Optional[int]) -> dict[str, Any]:
         serialized = self.serialize()
         for card in serialized["hand"]:
-            card["playable"] = (top_card is None) or Card(card["value"]).is_playable(top_card)
+            card["playable"] = (top_card is None) or Card.is_playable(card["value"], top_card)
         return serialized

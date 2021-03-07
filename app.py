@@ -9,7 +9,7 @@ from flask_cors import CORS # type: ignore
 
 from models import db
 import models
-from game import Game, Move, Card, TurnResult
+from logic import play_turn, Move, TurnResult
 
 logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO)
@@ -77,9 +77,6 @@ class JoinGameInputs(Inputs):
 
 class CreateGameInputs(Inputs):
     json = [JsonSchema(schema=CREATE_GAME_SCHEMA)]
-
-pending_games: dict[str, list[str]] = {}
-games: dict[str, Game] = {}
 
 def resource_not_found(resource, resource_id):
     response = {
@@ -160,39 +157,41 @@ def start_game(game_id: str):
 
 @app.route("/api/games/<game_id>/play", methods=["POST"])
 def play_game_turn(game_id: str):
-    if game_id in pending_games:
-        return { "error": "game_not_started" }, 400
-    if game_id not in games:
-        return resource_not_found(resource="game", resource_id=game_id)
-
     inputs = PlayTurnInputs(request)
     if not inputs.validate():
         return { "errors": inputs.errors }, 400
 
-    player_id = request.json["player_id"]
-    move = request.json["move"]
-    card_value = request.json["card_value"]
+    with app.app_context():
+        game = models.Game.query.get(game_id)
+        if not game:
+            return resource_not_found(resource="game", resource_id=game_id)
+        if game.is_waiting():
+            return { "error": "game_not_started" }, 400
 
-    game = games[game_id]
-    try:
-        player_no = next(i for i, p in enumerate(game.players) if p.id == player_id)
-    except StopIteration:
-        return { "error": f"Invalid player_id: {player_id}" }, 400
+        player_id = request.json["player_id"]
+        player = models.Player.query.filter_by(user_id=player_id, game_id=game_id).first()
+        if not player:
+            return resource_not_found(resource="player", resource_id=player_id)
 
-    result, events = game.play_turn(
-        player_no,
-        move=Move[move],
-        card=Card(card_value),
-    )
+        move = request.json["move"]
+        card_value = request.json["card_value"]
 
-    if result == TurnResult.SUCCESS:
-        return jsonify({
-            "game": game.serialize(),
-            "result": result.name,
-            "events": list(ev.name for ev in events),
-        })
-    else:
-        return { "error": result.name, "result": result.name }, 400
+        result, events = play_turn(
+            game,
+            player,
+            move=Move[move],
+            card=card_value,
+        )
+        db.session.commit()
+
+        if result == TurnResult.SUCCESS:
+            return jsonify({
+                "game": game.serialize(),
+                "result": result.name,
+                "events": list(ev.name for ev in events),
+            })
+        else:
+            return { "error": result.name, "result": result.name }, 400
 
 @app.route("/api/games/<game_id>/players/<player_id>", methods=["GET"])
 def get_player(game_id: str, player_id: str):
@@ -205,8 +204,7 @@ def get_player(game_id: str, player_id: str):
         if not player:
             return resource_not_found(resource="player", resource_id=player_id)
 
-        top_card = Card(game.last_card) if game.last_card else None
-        return player.serialize_with_playable_cards(top_card), 200
+        return player.serialize_with_playable_cards(game.last_card), 200
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0")

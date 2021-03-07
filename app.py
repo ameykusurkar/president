@@ -16,13 +16,18 @@ logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_DATABASE_URI"] = (
-    "postgresql://" +
-    os.environ["PGUSER"] + ":" +
-    os.environ.get("PGPASSWORD", "") + "@" +
-    os.environ.get("PGHOST", "localhost") + "/" +
-    os.environ["PGDATABASE"]
-)
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+if DATABASE_URL:
+    app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = (
+        "postgresql://" +
+        os.environ["PGUSER"] + ":" +
+        os.environ.get("PGPASSWORD", "") + "@" +
+        os.environ.get("PGHOST", "localhost") + "/" +
+        os.environ["PGDATABASE"]
+    )
 
 db.init_app(app)
 

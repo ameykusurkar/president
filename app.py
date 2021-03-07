@@ -95,16 +95,9 @@ def index():
 def get_game(game_id: str):
     with app.app_context():
         game = models.Game.query.get(game_id)
-        if game:
-            player_ids = list(p.user_id for p in game.players)
-            return jsonify({
-                "player_ids": player_ids,
-                "status": game.status,
-            })
-    if game_id in games:
-        return jsonify(games[game_id].serialize())
-
-    return resource_not_found(resource="game", resource_id=game_id)
+        if not game:
+            return resource_not_found(resource="game", resource_id=game_id)
+        return jsonify(game.serialize())
 
 @app.route("/api/games", methods=["POST"])
 def create_game():
@@ -112,50 +105,58 @@ def create_game():
     if not inputs.validate():
         return { "errors": inputs.errors }, 400
 
-    response = {}
     with app.app_context():
         game = models.Game()
         db.session.add(game)
         db.session.flush()
-        response["game_id"] = game.id
-        player = models.Player(user_id=request.json["player_id"], game_id=game.id)
+        player = models.Player(user_id=request.json["player_id"],
+                               game_id=game.id,
+                               game_player_index=game.player_count())
         db.session.add(player)
         db.session.commit()
-    return jsonify(response), 201
+        return jsonify(game.serialize()), 201
 
-@app.route("/api/games/<game_id>/join", methods=["POST"])
-def join_game(game_id: str):
-    if game_id in games:
-        return { "error": "game_already_started" }, 400
-    if game_id not in pending_games:
-        return resource_not_found(resource="game", resource_id=game_id)
-
+@app.route("/api/games/<int:game_id>/join", methods=["POST"])
+def join_game(game_id: int):
     inputs = JoinGameInputs(request)
     if not inputs.validate():
         return { "errors": inputs.errors }, 400
 
-    player_id = request.json["player_id"]
+    with app.app_context():
+        game = models.Game.query.get(game_id)
+        if not game:
+            return resource_not_found(resource="game", resource_id=game_id)
+        if not game.is_waiting():
+            return { "error": "game_already_started" }, 400
 
-    if player_id in pending_games[game_id]:
-        return { "error": "player_id_already_joined" }, 400
+        player_id = request.json["player_id"]
+        player_exists = db.session.query(models.Player.id).\
+            filter_by(user_id=player_id, game_id=game_id).first()
+        if player_exists:
+            return { "error": "player_id_already_joined" }, 400
 
-    pending_games[game_id].append(player_id)
-    return jsonify(""), 200
+        player = models.Player(user_id=player_id,
+                               game_id=game_id,
+                               game_player_index=game.player_count())
+        db.session.add(player)
+        db.session.commit()
+        return jsonify(player.serialize()), 201
 
 # TODO: Only game leader can start the game
 @app.route("/api/games/<game_id>/start", methods=["POST"])
 def start_game(game_id: str):
-    if game_id in games:
-        return jsonify(""), 200
-    if game_id not in pending_games:
-        return resource_not_found(resource="game", resource_id=game_id)
-    if len(pending_games[game_id]) < 2:
-        return { "error": "need_at_least_two_players" }, 400
+    with app.app_context():
+        game = models.Game.query.get(game_id)
+        if not game:
+            return resource_not_found(resource="game", resource_id=game_id)
+        if not game.is_waiting():
+            return {}, 200
+        if game.player_count() < 2:
+            return { "error": "need_at_least_two_players" }, 400
 
-    player_ids = pending_games[game_id]
-    pending_games.pop(game_id)
-    games[game_id] = Game(player_ids)
-    return jsonify(""), 200
+        game.start()
+        db.session.commit()
+        return {}, 200
 
 @app.route("/api/games/<game_id>/play", methods=["POST"])
 def play_game_turn(game_id: str):
@@ -195,17 +196,17 @@ def play_game_turn(game_id: str):
 
 @app.route("/api/games/<game_id>/players/<player_id>", methods=["GET"])
 def get_player(game_id: str, player_id: str):
-    if game_id in pending_games:
-        return { "error": "game_not_started" }, 400
-    if game_id not in games:
-        return resource_not_found(resource="game", resource_id=game_id)
+    with app.app_context():
+        game = models.Game.query.get(game_id)
+        if not game:
+            return resource_not_found(resource="game", resource_id=game_id)
 
-    game = games[game_id]
-    try:
-        top_card = game.get_top_card()
-        return next(p.serialize_with_playable_cards(top_card) for p in game.players if p.id == player_id)
-    except StopIteration:
-        return resource_not_found(resource="player", resource_id=player_id)
+        player = models.Player.query.filter_by(user_id=player_id, game_id=game_id).first()
+        if not player:
+            return resource_not_found(resource="player", resource_id=player_id)
+
+        top_card = Card(game.last_card) if game.last_card else None
+        return player.serialize_with_playable_cards(top_card), 200
 
 if __name__ == '__main__':
     app.run(debug=True, host="0.0.0.0")

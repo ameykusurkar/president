@@ -5,10 +5,10 @@ from enum import Enum
 from serialize import serialize_iterable
 from game.card import Card
 
-class PlayerStatus(Enum):
-    ACTIVE   = 0
-    PASSED   = 1
-    FINISHED = 2
+class PlayerStatus(str, Enum):
+    ACTIVE   = "ACTIVE"
+    PASSED   = "PASSED"
+    FINISHED = "FINISHED"
 
 class Move(Enum):
     PLAY = 0

@@ -14,7 +14,7 @@ function Game({ defaultPlayerID, gameID }) {
     return () => {
       clearInterval(interval);
     };
-  // eslint-disable-next-line
+    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
@@ -230,11 +230,8 @@ function Players({ gameID, playerIds, turnNo, currentPlayerId, setPlayerID }) {
 }
 
 function handleBadRequest(response) {
-  if (response.ok) {
-    return response.json();
-  } else {
-    return Promise.reject(response);
-  }
+  const json = response.json();
+  return json.then((json) => (response.ok ? json : Promise.reject(json)));
 }
 
 export { Game, BASE_URL, handleBadRequest };

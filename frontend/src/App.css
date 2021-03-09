@@ -4,10 +4,13 @@
   --color-card-red: #c0392b;
 }
 
-body {
-  margin: 0;
+* {
   font-family: Helvetica, sans-serif;
   box-sizing: border-box;
+}
+
+body {
+  margin: 0;
   color: var(--color-dark);
   background-color: var(--color-light);
 }
@@ -33,6 +36,7 @@ button:disabled {
 
 input {
   border: 1px solid;
+  font-family: Helvetica, sans-serif;
 }
 
 input:focus {
@@ -51,7 +55,6 @@ input:focus {
 .centered-screen-box {
   padding: 30px 5%;
   border: 2px solid;
-  font-size: 150%;
 }
 
 #join-game-box-button-outer {
@@ -59,9 +62,13 @@ input:focus {
   text-align: center;
 }
 
+#join-screen .centered-screen-box {
+  max-width: 700px;
+}
+
 #join-game-box-button-outer button {
-  font-size: 100%;
-  padding: 8px 12px;
+  font-size: 90%;
+  padding: 1em 2em;
 }
 
 .join-game-form-box {
@@ -70,11 +77,18 @@ input:focus {
   justify-content: center;
   flex-wrap: wrap;
   padding: 20px;
+  font-size: 150%;
 }
 
 .join-game-input {
   margin-left: 20px;
   font-size: 120%;
+}
+
+.join-game-error {
+  color: red;
+  padding: 10px;
+  font-size: 70%;
 }
 
 #waiting-screen .centered-screen-box {

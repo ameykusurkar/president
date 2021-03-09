@@ -12,7 +12,7 @@ export default function App() {
   return (
     <Router>
       <Switch>
-        <Route exact path="/" render={() => <JoinGame />} />
+        <Route exact path="/" render={() => <CreateGame />} />
         <Route
           exact
           path="/games/:id"
@@ -32,13 +32,13 @@ export default function App() {
   );
 }
 
-function JoinGame() {
-  const [joined, setJoined] = useState(false);
+function CreateGame() {
   const [playerID, setPlayerID] = useState("");
-  const [gameID, setGameID] = useState("");
+  const [gameID, setGameID] = useState(null);
+  const [error, setError] = useState(null);
 
-  function joinGame() {
-    fetch(`${BASE_URL}/games/${gameID}/join`, {
+  function createGame() {
+    fetch(`${BASE_URL}/games`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -46,11 +46,14 @@ function JoinGame() {
       body: JSON.stringify({ player_id: playerID }),
     })
       .then(handleBadRequest)
-      .then((data) => setJoined(true))
-      .catch((response) => console.log(response));
+      .then((data) => setGameID(data.id))
+      .catch((response) => {
+        console.log(response);
+        setError(response.errors[0]);
+      });
   }
 
-  if (joined) {
+  if (gameID) {
     return (
       <Redirect
         to={{
@@ -64,23 +67,16 @@ function JoinGame() {
       <div id="join-screen" className="centered-screen-box-outer">
         <div className="centered-screen-box">
           <div className="join-game-form-box">
-            <div className="join-game-label">Game ID</div>
-            <input
-              className="join-game-input"
-              type="text"
-              onChange={(e) => setGameID(e.target.value)}
-            />
-          </div>
-          <div className="join-game-form-box">
             <div className="join-game-label">Player ID</div>
             <input
               className="join-game-input"
               type="text"
               onChange={(e) => setPlayerID(e.target.value)}
             />
+            {error && <div className="join-game-error">{error}</div>}
           </div>
           <div id="join-game-box-button-outer">
-            <button onClick={joinGame}>Join Game</button>
+            <button onClick={createGame}>START NEW GAME</button>
           </div>
         </div>
       </div>
